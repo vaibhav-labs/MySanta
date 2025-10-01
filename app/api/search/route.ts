@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
-const SEARCH_SYNONYMS = {
+const SEARCH_SYNONYMS: Record<string, string[]> = {
   'birthday': ['bday', 'born', 'birth', 'anniversary', 'celebration'],
   'christmas': ['xmas', 'holiday', 'festive', 'winter', 'santa', 'gift'],
   'wedding': ['marriage', 'bride', 'groom', 'ceremony', 'matrimony'],

@@ -54,20 +54,20 @@ export async function POST(request: NextRequest) {
       where: {
         OR: [
           {
-            userId: currentUserId,
-            friendId: { in: existingUsers.map(u => u.id) }
+            requesterId: currentUserId,
+            addresseeId: { in: existingUsers.map(u => u.id) }
           },
           {
-            friendId: currentUserId,
-            userId: { in: existingUsers.map(u => u.id) }
+            addresseeId: currentUserId,
+            requesterId: { in: existingUsers.map(u => u.id) }
           }
         ]
       }
     })
 
     const existingFriendIds = new Set([
-      ...existingFriendships.map(f => f.userId),
-      ...existingFriendships.map(f => f.friendId)
+      ...existingFriendships.map(f => f.requesterId),
+      ...existingFriendships.map(f => f.addresseeId)
     ])
 
     // Filter out users who are already friends or self
@@ -77,23 +77,22 @@ export async function POST(request: NextRequest) {
 
     // Create friendships
     const friendships = newFriends.map(friend => ({
-      userId: currentUserId,
-      friendId: friend.id,
+      requesterId: currentUserId,
+      addresseeId: friend.id,
       status: "ACCEPTED" as const // Auto-accept for users on the platform
     }))
 
     // Create reverse friendships (bidirectional)
     const reverseFriendships = newFriends.map(friend => ({
-      userId: friend.id,
-      friendId: currentUserId,
+      requesterId: friend.id,
+      addresseeId: currentUserId,
       status: "ACCEPTED" as const
     }))
 
     // Bulk create friendships
     if (friendships.length > 0) {
       await prisma.friendship.createMany({
-        data: [...friendships, ...reverseFriendships],
-        skipDuplicates: true
+        data: [...friendships, ...reverseFriendships]
       })
     }
 

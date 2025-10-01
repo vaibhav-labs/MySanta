@@ -9,8 +9,8 @@ interface ShareButtonProps {
   title: string
   text?: string
   url: string
-  variant?: "default" | "outline" | "ghost"
-  size?: "default" | "sm" | "lg"
+  variant?: "primary" | "secondary" | "outline" | "ghost"
+  size?: "sm" | "md" | "lg"
   className?: string
 }
 
