@@ -1,12 +1,12 @@
 import { NextAuthOptions } from "next-auth"
-import { PrismaAdapter } from "@auth/prisma-adapter"
+import { SupabaseAdapter } from "./supabase-adapter"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
-import { prisma } from "@/lib/prisma"
+import { db } from "./db"
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
+  adapter: SupabaseAdapter() as any,
   providers: [
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
       GoogleProvider({
@@ -30,19 +30,15 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
-          }
-        })
+        const user = await db.user.findByEmail(credentials.email)
 
-        if (!user || !user.hashedPassword) {
+        if (!user || !user.hashed_password) {
           return null
         }
 
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
-          user.hashedPassword
+          user.hashed_password
         )
 
         if (!isPasswordValid) {
@@ -64,6 +60,7 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/sign-in",
   },
+  debug: process.env.NODE_ENV === "development",
   callbacks: {
     async jwt({ token, user, account }) {
       if (user) {

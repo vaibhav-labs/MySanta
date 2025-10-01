@@ -1,27 +1,43 @@
 import { requireAuth } from "@/lib/auth-helpers"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
 import { Navigation } from "@/components/Navigation"
 import { EventCard } from "@/components/events/EventCard"
 import { Button } from "@/components/ui/Button"
 import Link from "next/link"
 
 async function getUserEvents(userId: string) {
-  return prisma.event.findMany({
-    where: { userId },
-    include: {
-      lists: {
-        include: {
-          items: {
-            select: {
-              id: true,
-              status: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: { eventDate: "asc" },
-  })
+  const events = await db.event.findMany(userId)
+  
+  // Get lists for each event
+  const eventsWithDetails = await Promise.all(
+    events.map(async (event: any) => {
+      const lists = await db.list.findMany(userId)
+      const eventLists = lists.filter((list: any) => list.event_id === event.id)
+      
+      // Get items for each list
+      const listsWithItems = await Promise.all(
+        eventLists.map(async (list: any) => {
+          const items = await db.listItem.findMany(list.id)
+          return {
+            ...list,
+            items: items.map((item: any) => ({
+              id: item.id,
+              status: item.status,
+            })),
+          }
+        })
+      )
+      
+      return {
+        ...event,
+        lists: listsWithItems,
+      }
+    })
+  )
+  
+  return eventsWithDetails.sort((a, b) => 
+    new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
+  )
 }
 
 export default async function EventsPage() {

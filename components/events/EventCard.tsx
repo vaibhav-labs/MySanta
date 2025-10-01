@@ -11,7 +11,8 @@ interface EventCardProps {
     id: string
     name: string
     occasion: string
-    eventDate: Date
+    eventDate: Date | string
+    event_date?: Date | string  // Alternative field name from database
     description?: string | null
     lists: {
       id: string
@@ -25,8 +26,23 @@ interface EventCardProps {
 }
 
 export function EventCard({ event }: EventCardProps) {
-  const eventDate = new Date(event.eventDate)
+  // Handle both eventDate and event_date field names from database
+  const dateValue = event.eventDate || event.event_date
+  const eventDate = new Date(dateValue!)
   const today = new Date()
+  
+  // Check if the date is valid
+  if (!eventDate || isNaN(eventDate.getTime())) {
+    return (
+      <Card className="border-red-200">
+        <CardContent className="p-4">
+          <p className="text-red-600">Error: Invalid event date</p>
+          <p className="text-sm text-gray-600">{event.name}</p>
+        </CardContent>
+      </Card>
+    )
+  }
+  
   const daysUntil = Math.ceil((eventDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
   const isUpcoming = daysUntil >= 0

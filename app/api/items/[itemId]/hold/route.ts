@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(
   request: NextRequest,
@@ -13,16 +15,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const item = await prisma.listItem.findUnique({
-      where: { id: params.itemId },
-      include: {
-        list: {
-          include: {
-            user: true,
-          },
-        },
-      },
-    })
+    const item = await db.listItem.findById(params.itemId)
 
     if (!item) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 })
@@ -42,23 +35,12 @@ export async function POST(
       )
     }
 
-    const updatedItem = await prisma.listItem.update({
-      where: { id: params.itemId },
-      data: {
-        status: "ON_HOLD",
-        heldByUserId: session.user.id,
-      },
-      include: {
-        heldByUser: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
+    const updatedItem = await db.listItem.update(params.itemId, {
+      status: "ON_HOLD",
+      heldByUserId: session.user.id,
     })
 
-    await prisma.notification.create({
+    await db.notification.create({
       data: {
         userId: item.list.userId,
         message: `An item on your '${item.list.name}' list has been reserved!`,
@@ -85,9 +67,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const item = await prisma.listItem.findUnique({
-      where: { id: params.itemId },
-    })
+    const item = await db.listItem.findById(params.itemId )
 
     if (!item) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 })
@@ -97,12 +77,9 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const updatedItem = await prisma.listItem.update({
-      where: { id: params.itemId },
-      data: {
-        status: "WISHED",
-        heldByUserId: null,
-      },
+    const updatedItem = await db.listItem.update(params.itemId, {
+      status: "WISHED",
+      heldByUserId: null,
     })
 
     return NextResponse.json(updatedItem)

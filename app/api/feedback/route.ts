@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,14 +22,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const newFeedback = await prisma.feedback.create({
-      data: {
-        name: name || null,
-        email: email || null,
-        feedback,
-        rating: rating || null,
-        category,
-      },
+    const newFeedback = await db.feedback.create({
+      name: name || null,
+      email: email || null,
+      feedback,
+      rating: rating || null,
+      category,
     })
 
     return NextResponse.json({
@@ -49,25 +49,25 @@ export async function GET(request: NextRequest) {
     const category = url.searchParams.get("category")
     const limit = parseInt(url.searchParams.get("limit") || "50")
 
-    const where = category ? { category } : {}
-
-    const feedback = await prisma.feedback.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: limit,
-    })
-
-    const stats = await prisma.feedback.aggregate({
-      where,
-      _count: { id: true },
-      _avg: { rating: true },
-    })
+    const allFeedback = await db.feedback.findMany()
+    
+    // Filter and limit in memory
+    let filteredFeedback = allFeedback
+    if (category) {
+      filteredFeedback = allFeedback.filter((f: any) => f.category === category)
+    }
+    const feedback = filteredFeedback.slice(0, limit)
+    
+    // Calculate stats
+    const relevantFeedback = category ? filteredFeedback : allFeedback
+    const totalCount = relevantFeedback.length
+    const avgRating = relevantFeedback.reduce((sum: number, f: any) => sum + (f.rating || 0), 0) / relevantFeedback.filter((f: any) => f.rating).length || 0
 
     return NextResponse.json({
       feedback,
       stats: {
-        total: stats._count.id,
-        averageRating: stats._avg.rating,
+        total: totalCount,
+        averageRating: avgRating,
       },
     })
   } catch (error) {

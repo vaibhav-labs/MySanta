@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
+
+export const dynamic = 'force-dynamic'
 
 export async function PUT(
   request: NextRequest,
@@ -23,9 +25,7 @@ export async function PUT(
       )
     }
 
-    const friendship = await prisma.friendship.findUnique({
-      where: { id: friendshipId }
-    })
+    const friendship = await db.friendship.findById(friendshipId )
 
     if (!friendship) {
       return NextResponse.json(
@@ -48,10 +48,7 @@ export async function PUT(
       block: "BLOCKED"
     }
 
-    await prisma.friendship.update({
-      where: { id: friendshipId },
-      data: { status: statusMap[action as keyof typeof statusMap] }
-    })
+    await db.friendship.update(friendshipId , { status: statusMap[action as keyof typeof statusMap] })
 
     return NextResponse.json({
       success: true,
@@ -78,9 +75,7 @@ export async function DELETE(
 
     const { friendshipId } = params
 
-    const friendship = await prisma.friendship.findUnique({
-      where: { id: friendshipId }
-    })
+    const friendship = await db.friendship.findById(friendshipId )
 
     if (!friendship) {
       return NextResponse.json(
@@ -97,9 +92,7 @@ export async function DELETE(
       )
     }
 
-    await prisma.friendship.delete({
-      where: { id: friendshipId }
-    })
+    await db.friendship.delete(friendshipId)
 
     return NextResponse.json({
       success: true,

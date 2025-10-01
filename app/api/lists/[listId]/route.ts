@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
 import { isOwner } from "@/lib/utils"
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(
   request: NextRequest,
@@ -14,35 +16,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const list = await prisma.list.findUnique({
-      where: {
-        id: params.listId,
-      },
-      include: {
-        event: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            address: true,
-          },
-        },
-        items: {
-          include: {
-            heldByUser: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-        },
-      },
-    })
+    const list = await db.list.findById(params.listId)
 
     if (!list) {
       return NextResponse.json({ error: "List not found" }, { status: 404 })
@@ -52,7 +26,7 @@ export async function GET(
 
     if (!isListOwner) {
       list.items = list.items.filter(
-        (item) =>
+        (item: any) =>
           !["PURCHASED", "RECEIVED", "BOUGHT_SELF", "REMOVED"].includes(
             item.status
           )
@@ -89,9 +63,7 @@ export async function PUT(
       )
     }
 
-    const list = await prisma.list.findUnique({
-      where: { id: params.listId },
-    })
+    const list = await db.list.findById(params.listId )
 
     if (!list) {
       return NextResponse.json({ error: "List not found" }, { status: 404 })
@@ -101,14 +73,7 @@ export async function PUT(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const updatedList = await prisma.list.update({
-      where: { id: params.listId },
-      data: { name },
-      include: {
-        event: true,
-        items: true,
-      },
-    })
+    const updatedList = await db.list.update(params.listId, { name })
 
     return NextResponse.json(updatedList)
   } catch (error) {
@@ -130,9 +95,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const list = await prisma.list.findUnique({
-      where: { id: params.listId },
-    })
+    const list = await db.list.findById(params.listId )
 
     if (!list) {
       return NextResponse.json({ error: "List not found" }, { status: 404 })
@@ -142,9 +105,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    await prisma.list.delete({
-      where: { id: params.listId },
-    })
+    await db.list.delete(params.listId)
 
     return NextResponse.json({ message: "List deleted successfully" })
   } catch (error) {

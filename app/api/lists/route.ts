@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
 import { listSchema } from "@/lib/validations"
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,26 +13,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const lists = await prisma.list.findMany({
-      where: {
-        userId: session.user.id,
-      },
-      include: {
-        event: true,
-        items: {
-          select: {
-            id: true,
-            productName: true,
-            status: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    })
+    const lists = await db.list.findMany(session.user.id)
+    
+    // Fetch events and items for each list
+    const listsWithDetails = await Promise.all(
+      lists.map(async (list: any) => {
+        const event = list.event_id ? await db.event.findById(list.event_id) : null
+        const items = await db.listItem.findMany(list.id)
+        
+        return {
+          ...list,
+          event,
+          items: items.map((item: any) => ({
+            id: item.id,
+            productName: item.product_name,
+            status: item.status,
+          })),
+        }
+      })
+    )
 
-    return NextResponse.json(lists)
+    return NextResponse.json(listsWithDetails)
   } catch (error) {
     console.error("Error fetching lists:", error)
     return NextResponse.json(
@@ -59,19 +62,22 @@ export async function POST(request: NextRequest) {
 
     const { name, eventId } = validation.data
 
-    const list = await prisma.list.create({
-      data: {
-        name,
-        userId: session.user.id,
-        eventId: eventId || null,
-      },
-      include: {
-        event: true,
-        items: true,
-      },
+    const list = await db.list.create({
+      name,
+      userId: session.user.id,
+      eventId: eventId || null,
     })
+    
+    const event = list.event_id ? await db.event.findById(list.event_id) : null
+    const items = await db.listItem.findMany(list.id)
+    
+    const listWithDetails = {
+      ...list,
+      event,
+      items,
+    }
 
-    return NextResponse.json(list, { status: 201 })
+    return NextResponse.json(listWithDetails, { status: 201 })
   } catch (error) {
     console.error("Error creating list:", error)
     return NextResponse.json(

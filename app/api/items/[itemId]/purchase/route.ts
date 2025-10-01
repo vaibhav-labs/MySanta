@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(
   request: NextRequest,
@@ -13,16 +15,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const item = await prisma.listItem.findUnique({
-      where: { id: params.itemId },
-      include: {
-        list: {
-          include: {
-            user: true,
-          },
-        },
-      },
-    })
+    const item = await db.listItem.findById(params.itemId)
 
     if (!item) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 })
@@ -49,22 +42,11 @@ export async function POST(
       )
     }
 
-    const updatedItem = await prisma.listItem.update({
-      where: { id: params.itemId },
-      data: {
-        status: "PURCHASED",
-      },
-      include: {
-        heldByUser: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
+    const updatedItem = await db.listItem.update(params.itemId, {
+      status: "PURCHASED",
     })
 
-    await prisma.notification.create({
+    await db.notification.create({
       data: {
         userId: item.list.userId,
         message: `A gift from your '${item.list.name}' list has been purchased!`,

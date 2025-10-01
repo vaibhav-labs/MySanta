@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
 
 export const dynamic = 'force-dynamic'
 
@@ -15,147 +15,74 @@ export async function GET(request: NextRequest) {
     const currentUserId = session.user.id
 
     // Get all friends of the current user
-    const friendships = await prisma.friendship.findMany({
-      where: {
-        OR: [
-          { requesterId: currentUserId, status: "ACCEPTED" },
-          { addresseeId: currentUserId, status: "ACCEPTED" }
-        ]
-      },
-      include: {
-        requester: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            gender: true,
-            image: true
+    const friendships = await db.friendship.findMany(currentUserId)
+    const acceptedFriendships = friendships.filter((f: any) => f.status === 'ACCEPTED')
+    
+    // Get friend details
+    const friendDetails = await Promise.all(
+      acceptedFriendships.map(async (friendship: any) => {
+        const friendId = friendship.requester_id === currentUserId ? 
+          friendship.addressee_id : friendship.requester_id
+        
+        const friend = await db.user.findById(friendId)
+        if (!friend) return null
+        
+        // Get friend's events and lists
+        const events = await db.event.findMany(friendId)
+        const lists = await db.list.findMany(friendId)
+        
+        // Get list items count for each list
+        const listsWithCounts = await Promise.all(
+          lists.map(async (list: any) => {
+            const items = await db.listItem.findMany(list.id)
+            return {
+              id: list.id,
+              name: list.name,
+              itemCount: items.length,
+              eventId: list.event_id
+            }
+          })
+        )
+        
+        // Map events with their lists
+        const eventsWithDetails = events.map((event: any) => ({
+          id: event.id,
+          name: event.name,
+          occasion: event.occasion,
+          description: event.description,
+          eventDate: event.event_date,
+          createdAt: event.created_at,
+          _count: {
+            lists: listsWithCounts.filter((l: any) => l.eventId === event.id).length
           }
-        },
-        addressee: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            gender: true,
-            image: true
+        }))
+        
+        return {
+          id: friend.id,
+          name: friend.name,
+          email: friend.email,
+          gender: friend.gender,
+          image: friend.image,
+          events: eventsWithDetails,
+          lists: listsWithCounts,
+          _count: {
+            events: events.length,
+            lists: lists.length
           }
         }
-      }
-    })
-
-    // Extract friend IDs (excluding current user)
-    const friendIds = friendships.map(friendship =>
-      friendship.requesterId === currentUserId ? friendship.addresseeId : friendship.requesterId
-    )
-
-    if (friendIds.length === 0) {
-      return NextResponse.json({
-        friends: [],
-        total: 0
       })
-    }
-
-    // Get friends with their events and lists
-    const friendsWithDetails = await prisma.user.findMany({
-      where: {
-        id: { in: friendIds }
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        gender: true,
-        image: true,
-        events: {
-          select: {
-            id: true,
-            name: true,
-            occasion: true,
-            description: true,
-            eventDate: true,
-            createdAt: true,
-            _count: {
-              select: {
-                lists: true
-              }
-            }
-          },
-          orderBy: {
-            eventDate: 'asc'
-          },
-          take: 5 // Show next 5 upcoming events
-        },
-        lists: {
-          select: {
-            id: true,
-            name: true,
-            createdAt: true,
-            event: {
-              select: {
-                name: true,
-                occasion: true,
-                eventDate: true
-              }
-            },
-            _count: {
-              select: {
-                items: true
-              }
-            },
-            items: {
-              select: {
-                id: true,
-                productName: true,
-                imageUrl: true,
-                price: true,
-                currency: true,
-                status: true
-              },
-              where: {
-                status: "WISHED" // Only show items that haven't been purchased
-              },
-              take: 3 // Show first 3 items as preview
-            }
-          },
-          orderBy: {
-            createdAt: 'desc'
-          },
-          take: 3 // Show 3 most recent lists
-        }
-      }
-    })
-
-    // Transform the data to include friendship info
-    const friendsData = friendsWithDetails.map(friend => {
-      const friendship = friendships.find(f =>
-        (f.requesterId === currentUserId && f.addresseeId === friend.id) ||
-        (f.addresseeId === currentUserId && f.requesterId === friend.id)
-      )
-
-      return {
-        ...friend,
-        friendshipId: friendship?.id,
-        friendSince: friendship?.createdAt,
-        upcomingEvents: friend.events.filter(event =>
-          new Date(event.eventDate) >= new Date()
-        ),
-        pastEvents: friend.events.filter(event =>
-          new Date(event.eventDate) < new Date()
-        ),
-        totalEvents: friend.events.length,
-        totalLists: friend.lists.length,
-        totalWishlistItems: friend.lists.reduce((acc, list) => acc + list._count.items, 0)
-      }
-    })
+    )
+    
+    // Filter out null values
+    const validFriends = friendDetails.filter(f => f !== null)
 
     return NextResponse.json({
-      friends: friendsData,
-      total: friendsData.length
+      friends: validFriends,
+      total: validFriends.length
     })
 
   } catch (error) {
-    console.error("Friends details fetch error:", error)
+    console.error("Error fetching friends details:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

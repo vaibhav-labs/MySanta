@@ -5,12 +5,19 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatDate(date: Date): string {
+export function formatDate(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  
+  // Check if the date is valid
+  if (!dateObj || isNaN(dateObj.getTime())) {
+    return "Invalid Date"
+  }
+  
   return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
-  }).format(date)
+  }).format(dateObj)
 }
 
 export function formatPriceUSD(price: number): string {
@@ -39,9 +46,14 @@ export function getUpcomingEvents(events: any[], daysAhead: number = 30) {
   futureDate.setDate(today.getDate() + daysAhead)
 
   return events.filter(event => {
-    const eventDate = new Date(event.eventDate)
-    return eventDate >= today && eventDate <= futureDate
-  }).sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
+    const dateValue = event.eventDate || event.event_date
+    const eventDate = new Date(dateValue)
+    return !isNaN(eventDate.getTime()) && eventDate >= today && eventDate <= futureDate
+  }).sort((a, b) => {
+    const aDate = new Date(a.eventDate || a.event_date)
+    const bDate = new Date(b.eventDate || b.event_date)
+    return aDate.getTime() - bDate.getTime()
+  })
 }
 
 export function truncateText(text: string, maxLength: number): string {

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(
   request: NextRequest,
@@ -16,23 +18,21 @@ export async function POST(
     const { itemId } = params
 
     // Check if item exists
-    const item = await prisma.listItem.findUnique({
-      where: { id: itemId },
-      include: {
-        list: {
-          include: {
-            user: true
-          }
-        }
-      }
-    })
+    const item = await db.listItem.findById(itemId)
 
     if (!item) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 })
     }
 
+    // Get the list to check ownership
+    const list = await db.list.findById(item.list_id)
+    
+    if (!list) {
+      return NextResponse.json({ error: "List not found" }, { status: 404 })
+    }
+
     // Check if user is trying to block their own item
-    if (item.list.userId === session.user.id) {
+    if (list.user_id === session.user.id) {
       return NextResponse.json(
         { error: "Cannot block your own item" },
         { status: 400 }
@@ -40,14 +40,8 @@ export async function POST(
     }
 
     // Check if already blocked
-    const existingBlock = await prisma.itemBlock.findUnique({
-      where: {
-        itemId_userId: {
-          itemId,
-          userId: session.user.id
-        }
-      }
-    })
+    const blocks = await db.itemBlock.findByItem(itemId)
+    const existingBlock = blocks.find((b: any) => b.user_id === session.user.id)
 
     if (existingBlock) {
       return NextResponse.json(
@@ -57,23 +51,9 @@ export async function POST(
     }
 
     // Create block
-    await prisma.itemBlock.create({
-      data: {
-        itemId,
-        userId: session.user.id
-      }
-    })
+    await db.itemBlock.create(itemId, session.user.id)
 
-    // Get updated block count
-    const blockCount = await prisma.itemBlock.count({
-      where: { itemId }
-    })
-
-    return NextResponse.json({
-      success: true,
-      blockCount,
-      message: "Item blocked successfully"
-    })
+    return NextResponse.json({ message: "Item blocked successfully" })
   } catch (error) {
     console.error("Error blocking item:", error)
     return NextResponse.json(
@@ -95,24 +75,10 @@ export async function DELETE(
 
     const { itemId } = params
 
-    // Delete block
-    await prisma.itemBlock.deleteMany({
-      where: {
-        itemId,
-        userId: session.user.id
-      }
-    })
+    // Remove block
+    await db.itemBlock.delete(itemId, session.user.id)
 
-    // Get updated block count
-    const blockCount = await prisma.itemBlock.count({
-      where: { itemId }
-    })
-
-    return NextResponse.json({
-      success: true,
-      blockCount,
-      message: "Item unblocked successfully"
-    })
+    return NextResponse.json({ message: "Item unblocked successfully" })
   } catch (error) {
     console.error("Error unblocking item:", error)
     return NextResponse.json(

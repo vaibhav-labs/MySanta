@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
 
 export const dynamic = 'force-dynamic'
 
@@ -81,222 +81,131 @@ export async function GET(request: NextRequest) {
     }
 
     const searchVariations = generateSearchVariations(query.trim())
+    
+    // Get all user's events
+    const allEvents = await db.event.findMany(session.user.id)
+    
+    // Filter events that match any variation
+    const events = allEvents.filter((event: any) => {
+      const eventText = `${event.name || ''} ${event.occasion || ''} ${event.description || ''}`.toLowerCase()
+      return searchVariations.some(variation => eventText.includes(variation))
+    }).slice(0, 15).map((event: any) => ({
+      id: event.id,
+      name: event.name,
+      occasion: event.occasion,
+      description: event.description,
+      eventDate: event.event_date,
+    }))
 
-    const createSearchConditions = (searchVariations: string[]) => {
-      return searchVariations.flatMap(variation => [
-        { name: { contains: variation } },
-        { occasion: { contains: variation } },
-        { description: { contains: variation } }
-      ])
+    // Get all user's lists
+    const allLists = await db.list.findMany(session.user.id)
+    
+    // Filter lists that match any variation
+    const lists = allLists.filter((list: any) => {
+      const listName = (list.name || '').toLowerCase()
+      return searchVariations.some(variation => listName.includes(variation))
+    }).slice(0, 15).map((list: any) => ({
+      id: list.id,
+      name: list.name,
+      createdAt: list.created_at,
+      _count: {
+        items: 0 // Will be populated below
+      }
+    }))
+
+    // Get items for each matching list
+    const listsWithCounts = await Promise.all(
+      lists.map(async (list: any) => {
+        const items = await db.listItem.findMany(list.id)
+        return {
+          ...list,
+          _count: {
+            items: items.length
+          }
+        }
+      })
+    )
+
+    // Get all list items
+    const allItems: any[] = []
+    for (const list of allLists) {
+      const items = await db.listItem.findMany(list.id)
+      items.forEach((item: any) => {
+        allItems.push({
+          ...item,
+          listId: list.id,
+          listName: list.name
+        })
+      })
     }
 
-    // Search events
-    const events = await prisma.event.findMany({
-      where: {
-        userId: session.user.id,
-        OR: createSearchConditions(searchVariations),
-      },
-      select: {
-        id: true,
-        name: true,
-        occasion: true,
-        description: true,
-        eventDate: true,
-      },
-      take: 15,
-    })
+    // Filter items that match any variation
+    const items = allItems.filter((item: any) => {
+      const itemText = `${item.product_name || ''} ${item.variants || ''} ${item.platform || ''}`.toLowerCase()
+      return searchVariations.some(variation => itemText.includes(variation))
+    }).slice(0, 20).map((item: any) => ({
+      id: item.id,
+      productName: item.product_name,
+      productUrl: item.product_url,
+      imageUrl: item.image_url,
+      price: item.price,
+      currency: item.currency,
+      platform: item.platform,
+      status: item.status,
+      list: {
+        id: item.listId,
+        name: item.listName
+      }
+    }))
 
-    // Search lists
-    const lists = await prisma.list.findMany({
-      where: {
-        userId: session.user.id,
-        OR: searchVariations.map(variation => ({
-          name: { contains: variation }
-        })),
-      },
-      select: {
-        id: true,
-        name: true,
-        createdAt: true,
-        event: {
-          select: {
-            name: true,
-            eventDate: true,
-            occasion: true,
-            description: true,
-          },
-        },
-        _count: {
-          select: {
-            items: true,
-          },
-        },
-      },
-      take: 15,
-    })
-
-    // Search list items
-    const items = await prisma.listItem.findMany({
-      where: {
-        list: {
-          userId: session.user.id,
-        },
-        OR: searchVariations.flatMap(variation => [
-          { productName: { contains: variation } },
-          { platform: { contains: variation } },
-          { variants: { contains: variation } },
-        ]),
-      },
-      select: {
-        id: true,
-        productName: true,
-        price: true,
-        currency: true,
-        imageUrl: true,
-        platform: true,
-        variants: true,
-        quantity: true,
-        listId: true,
-        list: {
-          select: {
-            name: true,
-            event: {
-              select: {
-                name: true,
-                occasion: true,
-                description: true,
-              },
-            },
-          },
-        },
-      },
-      take: 20,
-    })
-
-    const calculateRelevanceScore = (text: string, originalQuery: string, variations: string[]): number => {
-      let score = 0
+    // Calculate relevance scores
+    const scoreResult = (text: string) => {
       const lowerText = text.toLowerCase()
-      const lowerQuery = originalQuery.toLowerCase()
-
-      if (lowerText.includes(lowerQuery)) {
-        score += 100
-      }
-
-      variations.forEach(variation => {
-        if (lowerText.includes(variation.toLowerCase())) {
-          score += 50
-        }
+      const queryLower = query.toLowerCase()
+      
+      if (lowerText.includes(queryLower)) return 10
+      
+      const queryWords = queryLower.split(/\s+/)
+      let score = 0
+      queryWords.forEach(word => {
+        if (lowerText.includes(word)) score += 3
       })
-
-      const words = lowerQuery.split(/\s+/)
-      words.forEach(word => {
-        const wordRegex = new RegExp(`\\b${word}\\b`, 'i')
-        if (wordRegex.test(text)) {
-          score += 25
-        }
+      
+      searchVariations.forEach(variation => {
+        if (lowerText.includes(variation)) score += 1
       })
-
-      if (lowerText.startsWith(lowerQuery)) {
-        score += 30
-      }
-
+      
       return score
     }
 
-    const results = [
-      ...events.map(event => ({
-        type: "event" as const,
-        id: event.id,
-        title: event.name,
-        description: `${event.occasion}${event.description ? ` - ${event.description}` : ""}`,
-        date: event.eventDate.toISOString(),
-        relevanceScore: Math.max(
-          calculateRelevanceScore(event.name, query, searchVariations),
-          calculateRelevanceScore(event.occasion, query, searchVariations),
-          event.description ? calculateRelevanceScore(event.description, query, searchVariations) : 0
-        ),
-        context: `Event on ${event.eventDate.toLocaleDateString()}`,
+    const scoredResults = [
+      ...events.map((e: any) => ({
+        type: 'event',
+        data: e,
+        score: scoreResult(`${e.name} ${e.occasion} ${e.description}`)
       })),
-      ...lists.map(list => ({
-        type: "list" as const,
-        id: list.id,
-        title: list.name,
-        description: list.event
-          ? `Event: ${list.event.name} (${list.event.occasion}) • ${list._count.items} items`
-          : `${list._count.items} items`,
-        date: list.createdAt.toISOString(),
-        relevanceScore: Math.max(
-          calculateRelevanceScore(list.name, query, searchVariations),
-          list.event ? calculateRelevanceScore(list.event.name, query, searchVariations) : 0,
-          list.event?.occasion ? calculateRelevanceScore(list.event.occasion, query, searchVariations) : 0
-        ),
-        context: list.event ? `For ${list.event.occasion}` : "Personal list",
+      ...listsWithCounts.map((l: any) => ({
+        type: 'list',
+        data: l,
+        score: scoreResult(l.name)
       })),
-      ...items.map(item => ({
-        type: "item" as const,
-        id: item.id,
-        title: item.productName,
-        description: `${item.list.name}${item.list.event ? ` (${item.list.event.occasion})` : ""} • ${item.platform}${item.variants ? ` • ${item.variants}` : ""}${item.quantity && item.quantity > 1 ? ` • Qty: ${item.quantity}` : ""}`,
-        listId: item.listId,
-        price: item.price,
-        currency: item.currency,
-        imageUrl: item.imageUrl,
-        relevanceScore: Math.max(
-          calculateRelevanceScore(item.productName, query, searchVariations),
-          calculateRelevanceScore(item.platform, query, searchVariations),
-          item.variants ? calculateRelevanceScore(item.variants, query, searchVariations) : 0,
-          item.list.event?.occasion ? calculateRelevanceScore(item.list.event.occasion, query, searchVariations) : 0
-        ),
-        context: item.list.event?.occasion ? `For ${item.list.event.occasion}` : "Personal wishlist",
-      })),
-    ]
-
-    const sortedResults = results.sort((a, b) => {
-      if (b.relevanceScore !== a.relevanceScore) {
-        return b.relevanceScore - a.relevanceScore
-      }
-      return a.title.localeCompare(b.title)
-    })
-
-    const generateSuggestions = (originalQuery: string): string[] => {
-      const queryWords = originalQuery.toLowerCase().split(/\s+/)
-      const suggestions = new Set<string>()
-
-      queryWords.forEach(word => {
-        const normalized = normalizeWord(word)
-        if (SEARCH_SYNONYMS[normalized]) {
-          SEARCH_SYNONYMS[normalized].forEach(synonym => {
-            suggestions.add(synonym)
-          })
-        }
-      })
-
-      const popularTerms = ['birthday', 'christmas', 'wedding', 'tech', 'books', 'clothing', 'jewelry']
-      popularTerms.forEach(term => {
-        if (term.includes(normalizeWord(originalQuery)) || normalizeWord(originalQuery).includes(term)) {
-          suggestions.add(term)
-        }
-      })
-
-      return Array.from(suggestions).slice(0, 5)
-    }
-
-    const finalResults = sortedResults.slice(0, 25)
+      ...items.map((i: any) => ({
+        type: 'item',
+        data: i,
+        score: scoreResult(`${i.productName} ${i.platform}`)
+      }))
+    ].sort((a, b) => b.score - a.score)
 
     return NextResponse.json({
-      results: finalResults,
-      total: sortedResults.length,
-      query: query,
-      searchVariations: searchVariations.slice(0, 10),
-      suggestions: generateSuggestions(query),
-      summary: {
-        events: events.length,
-        lists: lists.length,
-        items: items.length,
-        totalFound: sortedResults.length,
-        topScore: finalResults.length > 0 ? finalResults[0].relevanceScore : 0
-      }
+      results: {
+        events: scoredResults.filter(r => r.type === 'event').map(r => r.data),
+        lists: scoredResults.filter(r => r.type === 'list').map(r => r.data),
+        items: scoredResults.filter(r => r.type === 'item').map(r => r.data),
+      },
+      query,
+      variations: searchVariations
     })
+
   } catch (error) {
     console.error("Search error:", error)
     return NextResponse.json(

@@ -1,23 +1,32 @@
 import { requireAuth } from "@/lib/auth-helpers"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
 import { Navigation } from "@/components/Navigation"
 import { CreateListButton } from "@/components/lists/CreateListButton"
 import { ListCard } from "@/components/lists/ListCard"
 
 async function getUserLists(userId: string) {
-  return prisma.list.findMany({
-    where: { userId },
-    include: {
-      event: true,
-      items: {
-        select: {
-          id: true,
-          status: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  })
+  const lists = await db.list.findMany(userId)
+  
+  // Get details for each list
+  const listsWithDetails = await Promise.all(
+    lists.map(async (list: any) => {
+      const event = list.event_id ? await db.event.findById(list.event_id) : null
+      const items = await db.listItem.findMany(list.id)
+      
+      return {
+        ...list,
+        event,
+        items: items.map((item: any) => ({
+          id: item.id,
+          status: item.status,
+        })),
+      }
+    })
+  )
+  
+  return listsWithDetails.sort((a, b) => 
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  )
 }
 
 export default async function ListsPage() {

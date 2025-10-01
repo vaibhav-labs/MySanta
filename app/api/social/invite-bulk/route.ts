@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
+import { query } from "@/lib/supabase"
+
+export const dynamic = 'force-dynamic'
 
 interface BulkInviteRequest {
   emails: string[]
@@ -36,42 +39,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for existing users and friendships
-    const existingUsers = await prisma.user.findMany({
-      where: {
-        email: { in: validEmails }
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true
-      }
-    })
+    const placeholders = validEmails.map((_, i) => `$${i + 1}`).join(', ')
+    const existingUsers = await query(
+      `SELECT id, email, name FROM users WHERE email IN (${placeholders})`,
+      validEmails
+    )
 
     const currentUserId = session.user.id
 
     // Check existing friendships
-    const existingFriendships = await prisma.friendship.findMany({
-      where: {
-        OR: [
-          {
-            requesterId: currentUserId,
-            addresseeId: { in: existingUsers.map(u => u.id) }
-          },
-          {
-            addresseeId: currentUserId,
-            requesterId: { in: existingUsers.map(u => u.id) }
-          }
-        ]
-      }
-    })
+    const userIds = existingUsers.map((u: any) => u.id)
+    let existingFriendships: any[] = []
+    
+    if (userIds.length > 0) {
+      const idPlaceholders = userIds.map((_, i) => `$${i + 2}`).join(', ')
+      existingFriendships = await query(
+        `SELECT * FROM friendships 
+         WHERE (requester_id = $1 AND addressee_id IN (${idPlaceholders}))
+            OR (addressee_id = $1 AND requester_id IN (${idPlaceholders}))`,
+        [currentUserId, ...userIds, ...userIds]
+      )
+    }
 
     const existingFriendIds = new Set([
-      ...existingFriendships.map(f => f.requesterId),
-      ...existingFriendships.map(f => f.addresseeId)
+      ...existingFriendships.map((f: any) => f.requester_id),
+      ...existingFriendships.map((f: any) => f.addressee_id)
     ])
 
     // Filter out users who are already friends or self
-    const newFriends = existingUsers.filter(user =>
+    const newFriends = existingUsers.filter((user: any) =>
       user.id !== currentUserId && !existingFriendIds.has(user.id)
     )
 
@@ -91,13 +87,13 @@ export async function POST(request: NextRequest) {
 
     // Bulk create friendships
     if (friendships.length > 0) {
-      await prisma.friendship.createMany({
-        data: [...friendships, ...reverseFriendships]
-      })
+      for (const friendship of [...friendships, ...reverseFriendships]) {
+        await db.friendship.create(friendship)
+      }
     }
 
     // Emails of users not on platform (could be used for email invitations later)
-    const existingUserEmails = new Set(existingUsers.map(u => u.email))
+    const existingUserEmails = new Set(existingUsers.map((u: any) => u.email))
     const notOnPlatformEmails = validEmails.filter(email => !existingUserEmails.has(email))
 
     return NextResponse.json({

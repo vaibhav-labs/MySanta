@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
 import { signUpSchema } from "@/lib/validations"
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { name, email, hashedPassword, dob, anniversary, gender } = body
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    })
+    const existingUser = await db.user.findByEmail(email)
 
     if (existingUser) {
       return NextResponse.json(
@@ -18,15 +18,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        hashedPassword,
-        dob: new Date(dob),
-        anniversary: anniversary ? new Date(anniversary) : null,
-        gender: gender || "other",
-      },
+    const user = await db.user.create({
+      name,
+      email,
+      hashedPassword,
+      dob: new Date(dob),
+      anniversary: anniversary ? new Date(anniversary) : undefined,
+      gender: gender || "other",
     })
 
     return NextResponse.json(

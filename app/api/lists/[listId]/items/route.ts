@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
 import { listItemSchema } from "@/lib/validations"
 import { isOwner } from "@/lib/utils"
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(
   request: NextRequest,
@@ -15,9 +17,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const list = await prisma.list.findUnique({
-      where: { id: params.listId },
-    })
+    const list = await db.list.findById(params.listId )
 
     if (!list) {
       return NextResponse.json({ error: "List not found" }, { status: 404 })
@@ -41,8 +41,7 @@ export async function POST(
     const { productName, productUrl, imageUrl, price, currency, variants, platform } =
       validation.data
 
-    const item = await prisma.listItem.create({
-      data: {
+    const item = await db.listItem.create({
         listId: params.listId,
         productName,
         productUrl,
@@ -51,15 +50,6 @@ export async function POST(
         currency: currency || "USD",
         variants: variants || null,
         platform,
-      },
-      include: {
-        heldByUser: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
     })
 
     return NextResponse.json(item, { status: 201 })

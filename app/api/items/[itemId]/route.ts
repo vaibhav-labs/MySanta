@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
 import { updateListItemSchema } from "@/lib/validations"
 import { isOwner } from "@/lib/utils"
+
+export const dynamic = 'force-dynamic'
 
 export async function PUT(
   request: NextRequest,
@@ -15,12 +17,7 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const item = await prisma.listItem.findUnique({
-      where: { id: params.itemId },
-      include: {
-        list: true,
-      },
-    })
+    const item = await db.listItem.findById(params.itemId)
 
     if (!item) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 })
@@ -40,18 +37,7 @@ export async function PUT(
       )
     }
 
-    const updatedItem = await prisma.listItem.update({
-      where: { id: params.itemId },
-      data: validation.data,
-      include: {
-        heldByUser: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    })
+    const updatedItem = await db.listItem.update(params.itemId, validation.data)
 
     return NextResponse.json(updatedItem)
   } catch (error) {
@@ -73,12 +59,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const item = await prisma.listItem.findUnique({
-      where: { id: params.itemId },
-      include: {
-        list: true,
-      },
-    })
+    const item = await db.listItem.findById(params.itemId)
 
     if (!item) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 })
@@ -88,9 +69,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    await prisma.listItem.delete({
-      where: { id: params.itemId },
-    })
+    await db.listItem.delete(params.itemId)
 
     return NextResponse.json({ message: "Item deleted successfully" })
   } catch (error) {

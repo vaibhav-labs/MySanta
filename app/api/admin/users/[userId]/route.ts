@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
+
+export const dynamic = 'force-dynamic'
 
 export async function DELETE(
   request: NextRequest,
@@ -13,19 +15,13 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const currentUser = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true },
-    })
+    const currentUser = await db.user.findById(session.user.id)
 
     if (!currentUser || currentUser.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const userToDelete = await prisma.user.findUnique({
-      where: { id: params.userId },
-      select: { role: true },
-    })
+    const userToDelete = await db.user.findById(params.userId)
 
     if (!userToDelete) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
@@ -38,9 +34,7 @@ export async function DELETE(
       )
     }
 
-    await prisma.user.delete({
-      where: { id: params.userId },
-    })
+    await db.user.delete(params.userId)
 
     return NextResponse.json({ message: "User deleted successfully" })
   } catch (error) {

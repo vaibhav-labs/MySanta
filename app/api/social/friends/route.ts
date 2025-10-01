@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
+
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
@@ -10,47 +12,53 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const friends = await prisma.friendship.findMany({
-      where: {
-        OR: [
-          { requesterId: session.user.id, status: "ACCEPTED" },
-          { addresseeId: session.user.id, status: "ACCEPTED" }
-        ]
-      },
-      include: {
-        requester: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            gender: true
-          }
-        },
-        addressee: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            gender: true
+    // Get all friendships for the current user
+    const allFriendships = await db.friendship.findMany(session.user.id)
+    const acceptedFriendships = allFriendships.filter((f: any) => f.status === 'ACCEPTED')
+
+    // Get friend details
+    const friends = await Promise.all(
+      acceptedFriendships.map(async (friendship: any) => {
+        const friendId = friendship.requester_id === session.user.id 
+          ? friendship.addressee_id 
+          : friendship.requester_id
+        
+        const friendData = await db.user.findById(friendId)
+        
+        return {
+          id: friendship.id,
+          status: friendship.status,
+          createdAt: friendship.created_at,
+          requester: friendship.requester_id === session.user.id ? {
+            id: session.user.id,
+            name: session.user.name,
+            email: session.user.email,
+            gender: 'other' // Default as we don't have user data here
+          } : {
+            id: friendData?.id,
+            name: friendData?.name,
+            email: friendData?.email,
+            gender: friendData?.gender || 'other'
+          },
+          addressee: friendship.addressee_id === session.user.id ? {
+            id: session.user.id,
+            name: session.user.name,
+            email: session.user.email,
+            gender: 'other'
+          } : {
+            id: friendData?.id,
+            name: friendData?.name,
+            email: friendData?.email,
+            gender: friendData?.gender || 'other'
           }
         }
-      }
-    })
+      })
+    )
 
-    const friendsList = friends.map(friendship => {
-      const friend = friendship.requesterId === session.user.id
-        ? friendship.addressee
-        : friendship.requester
-      return {
-        id: friend.id,
-        name: friend.name,
-        email: friend.email,
-        gender: friend.gender,
-        friendshipId: friendship.id
-      }
+    return NextResponse.json({
+      friends,
+      total: friends.length
     })
-
-    return NextResponse.json(friendsList)
   } catch (error) {
     console.error("Error fetching friends:", error)
     return NextResponse.json(
@@ -77,67 +85,53 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user by email
-    const targetUser = await prisma.user.findUnique({
-      where: { email }
-    })
-
-    if (!targetUser) {
+    const user = await db.user.findByEmail(email)
+    
+    if (!user) {
       return NextResponse.json(
         { error: "User not found" },
         { status: 404 }
       )
     }
 
-    if (targetUser.id === session.user.id) {
+    if (user.id === session.user.id) {
       return NextResponse.json(
-        { error: "Cannot add yourself as a friend" },
+        { error: "Cannot send friend request to yourself" },
         { status: 400 }
       )
     }
 
     // Check if friendship already exists
-    const existingFriendship = await prisma.friendship.findFirst({
-      where: {
-        OR: [
-          { requesterId: session.user.id, addresseeId: targetUser.id },
-          { requesterId: targetUser.id, addresseeId: session.user.id }
-        ]
-      }
-    })
+    const allFriendships = await db.friendship.findMany(session.user.id)
+    const existingFriendship = allFriendships.find((f: any) => 
+      (f.requester_id === session.user.id && f.addressee_id === user.id) ||
+      (f.requester_id === user.id && f.addressee_id === session.user.id)
+    )
 
     if (existingFriendship) {
       return NextResponse.json(
-        { error: "Friend request already exists or users are already friends" },
+        { error: "Friendship request already exists" },
         { status: 400 }
       )
     }
 
-    // Create friend request
-    const friendship = await prisma.friendship.create({
-      data: {
-        requesterId: session.user.id,
-        addresseeId: targetUser.id,
-        status: "PENDING"
-      },
-      include: {
-        addressee: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            gender: true
-          }
-        }
-      }
+    // Create friendship
+    const friendship = await db.friendship.create({
+      requesterId: session.user.id,
+      addresseeId: user.id,
+      status: "PENDING"
     })
 
-    return NextResponse.json({
-      success: true,
-      message: "Friend request sent",
-      friendship
+    // Create notification for the addressee
+    await db.notification.create({
+      userId: user.id,
+      message: `${session.user.name || session.user.email} sent you a friend request`,
+      isRead: false
     })
+
+    return NextResponse.json(friendship, { status: 201 })
   } catch (error) {
-    console.error("Error sending friend request:", error)
+    console.error("Error creating friend request:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

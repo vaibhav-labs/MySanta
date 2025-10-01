@@ -62,7 +62,12 @@ function SignInForm() {
         toast.error("Invalid email or password")
       } else {
         toast.success("Signed in successfully!")
-        router.push(callbackUrl)
+        // Wait for session to be established before redirecting
+        const session = await getSession()
+        if (session) {
+          router.push(callbackUrl)
+          router.refresh()
+        }
       }
     } catch (error) {
       toast.error("An error occurred. Please try again.")
@@ -117,7 +122,12 @@ function SignInForm() {
       })
 
       if (result?.ok) {
-        router.push(callbackUrl)
+        // Wait for session to be established before redirecting
+        const session = await getSession()
+        if (session) {
+          router.push(callbackUrl)
+          router.refresh()
+        }
       }
     } catch (error) {
       toast.error("An error occurred. Please try again.")
