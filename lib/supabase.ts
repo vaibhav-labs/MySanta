@@ -17,9 +17,10 @@ const DB_CONFIG = {
 // Create PostgreSQL connection pool
 export const pgPool = new Pool(DB_CONFIG);
 
+
 // Supabase URL and anon key (these can be public as they're meant to be used client-side with RLS)
 const SUPABASE_URL = `https://ntqronyjnvuvqhbhpudn.supabase.co`;
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50cXJvbnlqbnZ1dnFoYmhwdWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM0MDEwMTgsImV4cCI6MjA0ODk3NzAxOH0.example'; // You'll need to get this from your Supabase dashboard
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50cXJvbnlqbnZ1dnFoYmhwdWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM0MDEwMTgsImV4cCI6MjA0ODk3NzAxOH0.example'; // You'll need to get this from your Supabasedashboard
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
