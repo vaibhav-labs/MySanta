@@ -4,11 +4,11 @@ import { createClient } from '@supabase/supabase-js';
 
 // Hardcoded Supabase credentials for private repo
 const DB_CONFIG = {
-  host: 'aws-0-ap-south-1.pooler.supabase.com',
-  port: 6543,
+  host: 'db.mcrtfnbnzincuihnyxfo.supabase.co',
+  port: 5432,
   database: 'postgres',
-  user: 'postgres.ntqronyjnvuvqhbhpudn',
-  password: 'RbUL1wu88gGuuDJ',
+  user: 'postgres',
+  password: 'ThisismySupabasepassword@123',
   ssl: {
     rejectUnauthorized: false
   }
@@ -19,8 +19,8 @@ export const pgPool = new Pool(DB_CONFIG);
 
 
 // Supabase URL and anon key (these can be public as they're meant to be used client-side with RLS)
-const SUPABASE_URL = `https://ntqronyjnvuvqhbhpudn.supabase.co`;
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50cXJvbnlqbnZ1dnFoYmhwdWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM0MDEwMTgsImV4cCI6MjA0ODk3NzAxOH0.example'; // You'll need to get this from your Supabasedashboard
+const SUPABASE_URL = `https://mcrtfnbnzincuihnyxfo.supabase.co`;
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jcnRmbmJuemluY3VpaG55eGZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzMDQ2NTgsImV4cCI6MjA3NDg4MDY1OH0.wEmJG0w3sQW7OdRFpNiDvdxupTfjSbPemmM2xYDuOss'; // You'll need to get this from your Supabasedashboard
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
