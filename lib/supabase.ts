@@ -2,20 +2,25 @@
 import { Pool } from 'pg';
 import { createClient } from '@supabase/supabase-js';
 
-// Hardcoded Supabase credentials for private repo
-const DB_CONFIG = {
-  host: 'db.mcrtfnbnzincuihnyxfo.supabase.co',
-  port: 5432,
-  database: 'postgres',
-  user: 'postgres',
-  password: 'ThisismySupabasepassword@123',
-  ssl: {
-    rejectUnauthorized: false
-  }
-};
+// Create PostgreSQL connection pool using DATABASE_URL from environment
+let pgPool: Pool | null = null
 
-// Create PostgreSQL connection pool
-export const pgPool = new Pool(DB_CONFIG);
+try {
+  if (process.env.DATABASE_URL) {
+    pgPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    })
+  } else {
+    console.warn('DATABASE_URL not found in environment variables')
+  }
+} catch (error) {
+  console.warn('Failed to create database connection pool:', error)
+}
+
+export { pgPool }
 
 
 // Supabase URL and anon key (these can be public as they're meant to be used client-side with RLS)
@@ -26,6 +31,10 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Helper function to execute queries
 export async function query<T = any>(sql: string, params?: any[]): Promise<T[]> {
+  if (!pgPool) {
+    throw new Error('Database connection not available')
+  }
+
   try {
     const result = await pgPool.query(sql, params);
     return result.rows as T[];
@@ -45,6 +54,10 @@ export async function queryOne<T = any>(sql: string, params?: any[]): Promise<T 
 export async function transaction<T = any>(
   callback: (client: any) => Promise<T>
 ): Promise<T> {
+  if (!pgPool) {
+    throw new Error('Database connection not available')
+  }
+
   const client = await pgPool.connect();
   try {
     await client.query('BEGIN');
