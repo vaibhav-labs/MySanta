@@ -33,9 +33,8 @@ export function ShareButton({
 
       // Check if Web Share API is supported
       if (navigator.share) {
+        // Share only the URL to prevent text concatenation issues
         await navigator.share({
-          title,
-          text: text || `Check out this ${title} on MySanta`,
           url: fullUrl,
         })
       } else {
@@ -126,14 +125,11 @@ export function CopyLinkButton({ url, className }: { url: string; className?: st
 // Specialized share buttons for different content types
 export function ShareListButton({ listId, listName }: { listId: string; listName: string }) {
   return (
-    <div className="flex space-x-2">
-      <ShareButton
-        title={listName}
-        text={`Check out my gift list "${listName}" on MySanta`}
-        url={`/lists/${listId}`}
-      />
-      <CopyLinkButton url={`/lists/${listId}`} />
-    </div>
+    <ShareButton
+      title={listName}
+      text={`Check out my gift list "${listName}" on MySanta`}
+      url={`/lists/${listId}`}
+    />
   )
 }
 
