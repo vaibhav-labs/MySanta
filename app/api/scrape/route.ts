@@ -58,13 +58,13 @@ export async function POST(request: NextRequest) {
               $('img[src]').filter((_, el) => {
                 const src = $(el).attr('src') || '';
                 // Skip tracking pixels, lazy load placeholders, and tiny images
-                return src &&
+                return !!(src &&
                        !src.includes('data:image') &&
                        !src.includes('fls-eu.amazon') &&
                        !src.includes('uedata') &&
                        !src.includes('1x1') &&
                        !src.includes('tracking') &&
-                       !src.includes('pixel');
+                       !src.includes('pixel'));
               }).first().attr('src') ||
               ""
 
@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
         image.includes('data:image/svg') ||
         image.length < 10
       )) {
-        image = null
+        image = ""
       }
 
       console.log(`[SCRAPER] Scraped: title="${title}", image="${image}", price=${price} ${currency}, platform=${platform}`)

@@ -4,6 +4,7 @@ import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { DashboardIcon, CalendarIcon, ListIcon, UserIcon, SearchIcon, UsersIcon } from "@/components/ui/Icons"
+import { NotificationBell } from "@/components/ui/NotificationBell"
 
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: DashboardIcon },
@@ -69,6 +70,9 @@ export function Navigation() {
                 </Link>
               )
             })}
+
+            {/* Notifications */}
+            <NotificationBell />
 
             {/* Avatar dropdown */}
             <div className="relative group ml-2">

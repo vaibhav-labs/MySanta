@@ -23,6 +23,7 @@ interface ListItem {
   quantity?: number
   status: string
   heldByUser?: { id: string; name: string | null } | null
+  collaboratorIds?: string | null
   blockCount?: number
   isBlockedByUser?: boolean
 }
@@ -51,14 +52,18 @@ export function ListItems({ list, currentUserId }: ListItemsProps) {
     router.push(`/sign-in?callbackUrl=/lists/${list.id}`)
   }
 
-  const handleHoldItem = async (itemId: string) => {
+  const handleHoldItem = async (itemId: string, collaborative = false) => {
     if (isGuest) { requireSignIn(); return }
     try {
-      const response = await fetch(`/api/items/${itemId}/hold`, { method: "POST" })
+      const response = await fetch(`/api/items/${itemId}/hold`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ collaborative })
+      })
       if (!response.ok) { toast.error((await response.json()).error || "Failed to hold item"); return }
       const updatedItem = await response.json()
       setItems(prev => prev.map(item => item.id === itemId ? updatedItem : item))
-      toast.success("Item held — it's yours to buy!")
+      toast.success(collaborative ? "Joined collaboration!" : "Item held — it's yours to buy!")
     } catch { toast.error("Failed to hold item") }
   }
 
@@ -208,11 +213,19 @@ export function ListItems({ list, currentUserId }: ListItemsProps) {
                     </p>
                   )}
 
-                  {item.status === "ON_HOLD" && item.heldByUser && (
+                  {item.status === "ON_HOLD" && (
                     <div className="flex items-center space-x-1.5 mb-2">
                       <span className="inline-block w-2 h-2 rounded-full bg-amber-400"></span>
                       <p className="text-xs text-amber-700 font-medium">
-                        Being considered by {item.heldByUser.name || "someone"}
+                        {(() => {
+                          const collaborators = item.collaboratorIds ? JSON.parse(item.collaboratorIds) : []
+                          const collaboratorCount = collaborators.length
+                          if (collaboratorCount > 1) {
+                            return `Being considered by ${collaboratorCount} people`
+                          }
+                          return "Being considered by someone"
+                        })()
+                        }
                       </p>
                     </div>
                   )}
@@ -268,17 +281,46 @@ export function ListItems({ list, currentUserId }: ListItemsProps) {
                       </div>
                     )}
 
+                    {/* Collaborative holding for already held items */}
                     {!list.isOwner && !isGuest && item.status === "ON_HOLD" && (
-                      <div className="space-y-2">
-                        <Button variant="outline" size="sm" className="w-full" onClick={() => handleReleaseHold(item.id)}>
-                          Release Hold
-                        </Button>
-                        <Button size="sm" className="w-full flex items-center space-x-2" onClick={() => handlePurchase(item)}>
-                          <ShoppingCartIcon className="w-4 h-4" />
-                          <span>Go to Store</span>
-                        </Button>
-                      </div>
+                      (() => {
+                        const collaborators = item.collaboratorIds ? JSON.parse(item.collaboratorIds) : []
+                        const isCollaborating = collaborators.includes(currentUserId!)
+                        const isPrimaryHolder = item.heldByUser?.id === currentUserId
+
+                        if (isPrimaryHolder || isCollaborating) {
+                          return (
+                            <div className="space-y-2">
+                              <Button variant="outline" size="sm" className="w-full" onClick={() => handleReleaseHold(item.id)}>
+                                {isCollaborating && !isPrimaryHolder ? "Leave Collaboration" : "Release Hold"}
+                              </Button>
+                              <Button size="sm" className="w-full flex items-center space-x-2" onClick={() => handlePurchase(item)}>
+                                <ShoppingCartIcon className="w-4 h-4" />
+                                <span>Go to Store</span>
+                              </Button>
+                            </div>
+                          )
+                        } else {
+                          return (
+                            <div className="space-y-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full flex items-center space-x-2"
+                                onClick={() => handleHoldItem(item.id, true)}
+                              >
+                                <HeartIcon className="w-4 h-4" />
+                                <span>Join Collaboration</span>
+                              </Button>
+                              <p className="text-xs text-gray-500 text-center">
+                                Split the cost with others
+                              </p>
+                            </div>
+                          )
+                        }
+                      })()
                     )}
+
 
                     {/* Owner actions */}
                     {list.isOwner && (
