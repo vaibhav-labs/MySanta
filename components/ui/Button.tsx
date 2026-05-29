@@ -4,20 +4,22 @@ import { ButtonHTMLAttributes, forwardRef } from "react"
 import { cn } from "@/lib/utils"
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost"
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger"
   size?: "sm" | "md" | "lg"
   loading?: boolean
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", loading = false, children, disabled, ...props }, ref) => {
-    const baseStyles = "inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+    const baseStyles =
+      "inline-flex items-center justify-center font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
 
     const variants = {
-      primary: "bg-black text-white hover:bg-gray-800 focus:ring-gray-500",
-      secondary: "bg-gray-100 text-black hover:bg-hover focus:ring-gray-500",
-      outline: "border border-secondary text-black hover:bg-hover focus:ring-gray-500",
-      ghost: "text-black hover:bg-hover focus:ring-gray-500",
+      primary:   "bg-primary text-white hover:bg-gray-700 focus:ring-gray-500",
+      secondary: "bg-surface text-primary border border-secondary hover:bg-hover focus:ring-gray-300",
+      outline:   "border border-secondary bg-white text-primary hover:bg-surface focus:ring-gray-300",
+      ghost:     "text-primary hover:bg-hover focus:ring-gray-300",
+      danger:    "bg-brand text-white hover:bg-brand-dark focus:ring-red-400",
     }
 
     const sizes = {
@@ -28,26 +30,14 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <button
-        className={cn(
-          baseStyles,
-          variants[variant],
-          sizes[size],
-          className
-        )}
+        className={cn(baseStyles, variants[variant], sizes[size], className)}
         ref={ref}
         disabled={disabled || loading}
         {...props}
       >
         {loading && (
           <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path
               className="opacity-75"
               fill="currentColor"
@@ -62,5 +52,4 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 )
 
 Button.displayName = "Button"
-
 export { Button }

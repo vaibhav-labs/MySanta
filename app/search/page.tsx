@@ -121,7 +121,7 @@ export default function SearchPage() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-surface">
         <Navigation />
         <main className="container py-8">
           <div className="max-w-2xl mx-auto text-center">
@@ -133,7 +133,7 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-surface">
       <Navigation />
 
       <main className="container py-8">

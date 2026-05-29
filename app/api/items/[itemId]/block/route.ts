@@ -17,31 +17,23 @@ export async function POST(
 
     const { itemId } = params
 
-    // Check if item exists
+    // findById includes the list relation
     const item = await db.listItem.findById(itemId)
-
     if (!item) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 })
     }
 
-    // Get the list to check ownership
-    const list = await db.list.findById(item.list_id)
-    
-    if (!list) {
-      return NextResponse.json({ error: "List not found" }, { status: 404 })
-    }
-
-    // Check if user is trying to block their own item
-    if (list.user_id === session.user.id) {
+    // Prevent owner blocking their own item
+    if (item.list.userId === session.user.id) {
       return NextResponse.json(
         { error: "Cannot block your own item" },
         { status: 400 }
       )
     }
 
-    // Check if already blocked
+    // Check if already blocked by this user
     const blocks = await db.itemBlock.findByItem(itemId)
-    const existingBlock = blocks.find((b: any) => b.user_id === session.user.id)
+    const existingBlock = blocks.find((b: any) => b.userId === session.user.id)
 
     if (existingBlock) {
       return NextResponse.json(
@@ -50,10 +42,14 @@ export async function POST(
       )
     }
 
-    // Create block
     await db.itemBlock.create(itemId, session.user.id)
 
-    return NextResponse.json({ message: "Item blocked successfully" })
+    const updatedBlocks = await db.itemBlock.findByItem(itemId)
+
+    return NextResponse.json({
+      message: "Item blocked successfully",
+      blockCount: updatedBlocks.length,
+    })
   } catch (error) {
     console.error("Error blocking item:", error)
     return NextResponse.json(
@@ -75,10 +71,14 @@ export async function DELETE(
 
     const { itemId } = params
 
-    // Remove block
     await db.itemBlock.delete(itemId, session.user.id)
 
-    return NextResponse.json({ message: "Item unblocked successfully" })
+    const updatedBlocks = await db.itemBlock.findByItem(itemId)
+
+    return NextResponse.json({
+      message: "Item unblocked successfully",
+      blockCount: updatedBlocks.length,
+    })
   } catch (error) {
     console.error("Error unblocking item:", error)
     return NextResponse.json(

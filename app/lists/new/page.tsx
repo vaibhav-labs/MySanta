@@ -6,7 +6,7 @@ export default async function NewListPage() {
   await requireAuth()
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-surface">
       <Navigation />
 
       <main className="container py-8">

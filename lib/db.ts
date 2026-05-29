@@ -1,451 +1,359 @@
-import { pgPool, query, queryOne, transaction } from './supabase';
-import bcrypt from 'bcryptjs';
+import { prisma } from './prisma'
 
-// User operations
 export const db = {
   user: {
     async findById(id: string) {
-      return queryOne('SELECT * FROM users WHERE id = $1', [id]);
+      return prisma.user.findUnique({ where: { id } })
     },
-    
+
     async findByEmail(email: string) {
-      return queryOne('SELECT * FROM users WHERE email = $1', [email]);
+      return prisma.user.findUnique({ where: { email } })
     },
-    
+
     async create(data: {
-      email: string;
-      name?: string;
-      hashedPassword?: string;
-      dob: Date;
-      gender?: string;
-      anniversary?: Date;
-      address?: any;
+      email: string
+      name?: string
+      hashedPassword?: string
+      dob?: Date
+      gender?: string
+      anniversary?: Date
+      address?: any
     }) {
-      const result = await queryOne(
-        `INSERT INTO users (email, name, hashed_password, dob, gender, anniversary, address)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         RETURNING *`,
-        [data.email, data.name, data.hashedPassword, data.dob, data.gender || 'other', data.anniversary, data.address ? JSON.stringify(data.address) : null]
-      );
-      return result;
+      return prisma.user.create({
+        data: {
+          email: data.email,
+          name: data.name,
+          hashedPassword: data.hashedPassword,
+          dob: data.dob,
+          gender: data.gender || 'other',
+          anniversary: data.anniversary ?? undefined,
+          address: data.address ? JSON.stringify(data.address) : undefined,
+        },
+      })
     },
-    
+
     async update(id: string, data: any) {
-      const fields = [];
-      const values = [];
-      let idx = 1;
-      
-      for (const [key, value] of Object.entries(data)) {
-        if (key === 'address' && value) {
-          fields.push(`address = $${idx}::jsonb`);
-          values.push(JSON.stringify(value));
-        } else {
-          fields.push(`${key} = $${idx}`);
-          values.push(value);
-        }
-        idx++;
+      const updateData: any = { ...data }
+      if (updateData.address && typeof updateData.address === 'object') {
+        updateData.address = JSON.stringify(updateData.address)
       }
-      
-      values.push(id);
-      
-      return queryOne(
-        `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
-        values
-      );
+      return prisma.user.update({ where: { id }, data: updateData })
     },
-    
+
     async delete(id: string) {
-      return query('DELETE FROM users WHERE id = $1', [id]);
+      return prisma.user.delete({ where: { id } })
     },
-    
+
     async findMany(where?: any) {
-      if (!where) {
-        return query('SELECT * FROM users');
-      }
-      
-      const conditions = [];
-      const values = [];
-      let idx = 1;
-      
-      for (const [key, value] of Object.entries(where)) {
-        conditions.push(`${key} = $${idx}`);
-        values.push(value);
-        idx++;
-      }
-      
-      return query(`SELECT * FROM users WHERE ${conditions.join(' AND ')}`, values);
-    }
+      if (!where) return prisma.user.findMany({ orderBy: { createdAt: 'desc' } })
+      return prisma.user.findMany({ where, orderBy: { createdAt: 'desc' } })
+    },
   },
-  
+
   account: {
     async create(data: any) {
-      return queryOne(
-        `INSERT INTO accounts (user_id, type, provider, provider_account_id, refresh_token, access_token, expires_at, token_type, scope, id_token, session_state)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-         RETURNING *`,
-        [data.userId, data.type, data.provider, data.providerAccountId, data.refresh_token, data.access_token, data.expires_at, data.token_type, data.scope, data.id_token, data.session_state]
-      );
+      return prisma.account.create({ data })
     },
-    
+
     async findUnique(provider: string, providerAccountId: string) {
-      return queryOne(
-        'SELECT * FROM accounts WHERE provider = $1 AND provider_account_id = $2',
-        [provider, providerAccountId]
-      );
-    }
+      return prisma.account.findUnique({
+        where: { provider_providerAccountId: { provider, providerAccountId } },
+      })
+    },
   },
-  
+
   session: {
     async create(data: any) {
-      return queryOne(
-        `INSERT INTO sessions (session_token, user_id, expires)
-         VALUES ($1, $2, $3)
-         RETURNING *`,
-        [data.sessionToken, data.userId, data.expires]
-      );
+      return prisma.session.create({ data })
     },
-    
+
     async findUnique(sessionToken: string) {
-      return queryOne(
-        'SELECT * FROM sessions WHERE session_token = $1',
-        [sessionToken]
-      );
+      return prisma.session.findUnique({ where: { sessionToken } })
     },
-    
+
     async delete(sessionToken: string) {
-      return query('DELETE FROM sessions WHERE session_token = $1', [sessionToken]);
-    }
+      return prisma.session.delete({ where: { sessionToken } })
+    },
   },
-  
+
   verificationToken: {
     async create(data: any) {
-      return queryOne(
-        `INSERT INTO verification_tokens (identifier, token, expires)
-         VALUES ($1, $2, $3)
-         RETURNING *`,
-        [data.identifier, data.token, data.expires]
-      );
+      return prisma.verificationToken.create({ data })
     },
-    
+
     async findUnique(identifier: string, token: string) {
-      return queryOne(
-        'SELECT * FROM verification_tokens WHERE identifier = $1 AND token = $2',
-        [identifier, token]
-      );
+      return prisma.verificationToken.findUnique({
+        where: { identifier_token: { identifier, token } },
+      })
     },
-    
+
     async delete(identifier: string, token: string) {
-      return query(
-        'DELETE FROM verification_tokens WHERE identifier = $1 AND token = $2',
-        [identifier, token]
-      );
-    }
+      return prisma.verificationToken.delete({
+        where: { identifier_token: { identifier, token } },
+      })
+    },
   },
-  
+
   event: {
     async findMany(userId?: string) {
       if (userId) {
-        return query('SELECT * FROM events WHERE user_id = $1 ORDER BY event_date', [userId]);
+        return prisma.event.findMany({
+          where: { userId },
+          orderBy: { eventDate: 'asc' },
+        })
       }
-      return query('SELECT * FROM events ORDER BY event_date');
+      return prisma.event.findMany({ orderBy: { eventDate: 'asc' } })
     },
-    
+
     async findById(id: string) {
-      return queryOne('SELECT * FROM events WHERE id = $1', [id]);
+      return prisma.event.findUnique({ where: { id } })
     },
-    
+
     async create(data: any) {
-      return queryOne(
-        `INSERT INTO events (user_id, name, occasion, event_date, description)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING *`,
-        [data.userId, data.name, data.occasion, data.eventDate, data.description]
-      );
+      return prisma.event.create({
+        data: {
+          userId: data.userId,
+          name: data.name,
+          occasion: data.occasion,
+          eventDate: data.eventDate,
+          description: data.description,
+        },
+      })
     },
-    
+
     async update(id: string, data: any) {
-      const fields = [];
-      const values = [];
-      let idx = 1;
-      
-      for (const [key, value] of Object.entries(data)) {
-        fields.push(`${key} = $${idx}`);
-        values.push(value);
-        idx++;
-      }
-      
-      values.push(id);
-      
-      return queryOne(
-        `UPDATE events SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
-        values
-      );
+      return prisma.event.update({ where: { id }, data })
     },
-    
+
     async delete(id: string) {
-      return query('DELETE FROM events WHERE id = $1', [id]);
-    }
+      return prisma.event.delete({ where: { id } })
+    },
   },
-  
+
   list: {
     async findMany(userId?: string) {
       if (userId) {
-        return query('SELECT * FROM lists WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
+        return prisma.list.findMany({
+          where: { userId },
+          orderBy: { createdAt: 'desc' },
+        })
       }
-      return query('SELECT * FROM lists ORDER BY created_at DESC');
+      return prisma.list.findMany({ orderBy: { createdAt: 'desc' } })
     },
-    
+
     async findById(id: string) {
-      return queryOne('SELECT * FROM lists WHERE id = $1', [id]);
+      return prisma.list.findUnique({ where: { id } })
     },
-    
+
     async create(data: any) {
-      return queryOne(
-        `INSERT INTO lists (user_id, event_id, name)
-         VALUES ($1, $2, $3)
-         RETURNING *`,
-        [data.userId, data.eventId, data.name]
-      );
+      return prisma.list.create({
+        data: {
+          userId: data.userId,
+          eventId: data.eventId ?? undefined,
+          name: data.name,
+        },
+      })
     },
-    
+
     async update(id: string, data: any) {
-      const fields = [];
-      const values = [];
-      let idx = 1;
-      
-      for (const [key, value] of Object.entries(data)) {
-        fields.push(`${key} = $${idx}`);
-        values.push(value);
-        idx++;
-      }
-      
-      values.push(id);
-      
-      return queryOne(
-        `UPDATE lists SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
-        values
-      );
+      return prisma.list.update({ where: { id }, data })
     },
-    
+
     async delete(id: string) {
-      return query('DELETE FROM lists WHERE id = $1', [id]);
-    }
+      return prisma.list.delete({ where: { id } })
+    },
   },
-  
+
   listItem: {
     async findMany(listId?: string) {
       if (listId) {
-        return query('SELECT * FROM list_items WHERE list_id = $1 ORDER BY created_at DESC', [listId]);
+        return prisma.listItem.findMany({
+          where: { listId },
+          orderBy: { createdAt: 'desc' },
+        })
       }
-      return query('SELECT * FROM list_items ORDER BY created_at DESC');
+      return prisma.listItem.findMany({ orderBy: { createdAt: 'desc' } })
     },
-    
+
     async findById(id: string) {
-      return queryOne('SELECT * FROM list_items WHERE id = $1', [id]);
+      return prisma.listItem.findUnique({
+        where: { id },
+        include: { list: true },
+      })
     },
-    
+
     async create(data: any) {
-      return queryOne(
-        `INSERT INTO list_items (list_id, product_name, product_url, image_url, price, currency, variants, platform, quantity, status, held_by_user_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-         RETURNING *`,
-        [data.listId, data.productName, data.productUrl, data.imageUrl, data.price, data.currency || 'USD', 
-         data.variants, data.platform, data.quantity || 1, data.status || 'WISHED', data.heldByUserId]
-      );
+      return prisma.listItem.create({
+        data: {
+          listId: data.listId,
+          productName: data.productName,
+          productUrl: data.productUrl,
+          imageUrl: data.imageUrl ?? undefined,
+          price: data.price ?? undefined,
+          currency: data.currency || 'USD',
+          variants: data.variants ?? undefined,
+          platform: data.platform ?? undefined,
+          quantity: data.quantity || 1,
+          status: data.status || 'WISHED',
+          heldByUserId: data.heldByUserId ?? undefined,
+        },
+      })
     },
-    
+
     async update(id: string, data: any) {
-      const fields = [];
-      const values = [];
-      let idx = 1;
-      
-      for (const [key, value] of Object.entries(data)) {
-        const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-        fields.push(`${dbKey} = $${idx}`);
-        values.push(value);
-        idx++;
-      }
-      
-      values.push(id);
-      
-      return queryOne(
-        `UPDATE list_items SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
-        values
-      );
+      // Accept either camelCase keys or a raw object
+      return prisma.listItem.update({ where: { id }, data })
     },
-    
+
     async delete(id: string) {
-      return query('DELETE FROM list_items WHERE id = $1', [id]);
-    }
+      return prisma.listItem.delete({ where: { id } })
+    },
   },
-  
+
   friendship: {
     async findMany(userId: string) {
-      return query(
-        `SELECT * FROM friendships 
-         WHERE (requester_id = $1 OR addressee_id = $1)
-         ORDER BY created_at DESC`,
-        [userId]
-      );
+      return prisma.friendship.findMany({
+        where: {
+          OR: [{ requesterId: userId }, { addresseeId: userId }],
+        },
+        orderBy: { createdAt: 'desc' },
+      })
     },
-    
+
     async findById(id: string) {
-      return queryOne('SELECT * FROM friendships WHERE id = $1', [id]);
+      return prisma.friendship.findUnique({ where: { id } })
     },
-    
+
     async findByUsers(requesterId: string, addresseeId: string) {
-      return queryOne(
-        'SELECT * FROM friendships WHERE requester_id = $1 AND addressee_id = $2',
-        [requesterId, addresseeId]
-      );
+      return prisma.friendship.findFirst({
+        where: { requesterId, addresseeId },
+      })
     },
-    
+
     async create(data: any) {
-      return queryOne(
-        `INSERT INTO friendships (requester_id, addressee_id, status)
-         VALUES ($1, $2, $3)
-         RETURNING *`,
-        [data.requesterId, data.addresseeId, data.status || 'PENDING']
-      );
+      return prisma.friendship.create({
+        data: {
+          requesterId: data.requesterId,
+          addresseeId: data.addresseeId,
+          status: data.status || 'PENDING',
+        },
+      })
     },
-    
+
     async update(id: string, data: any) {
-      const fields = [];
-      const values = [];
-      let idx = 1;
-      
-      for (const [key, value] of Object.entries(data)) {
-        fields.push(`${key} = $${idx}`);
-        values.push(value);
-        idx++;
-      }
-      
-      values.push(id);
-      
-      return queryOne(
-        `UPDATE friendships SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
-        values
-      );
+      return prisma.friendship.update({ where: { id }, data })
     },
-    
+
     async delete(id: string) {
-      return query('DELETE FROM friendships WHERE id = $1', [id]);
-    }
+      return prisma.friendship.delete({ where: { id } })
+    },
   },
-  
+
   notification: {
     async findMany(userId: string) {
-      return query(
-        'SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC',
-        [userId]
-      );
+      return prisma.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+      })
     },
-    
+
     async create(data: any) {
-      return queryOne(
-        `INSERT INTO notifications (user_id, message, is_read)
-         VALUES ($1, $2, $3)
-         RETURNING *`,
-        [data.userId, data.message, data.isRead || false]
-      );
+      return prisma.notification.create({
+        data: {
+          userId: data.userId,
+          message: data.message,
+          isRead: data.isRead ?? false,
+        },
+      })
     },
-    
+
     async markAsRead(id: string) {
-      return queryOne(
-        'UPDATE notifications SET is_read = true WHERE id = $1 RETURNING *',
-        [id]
-      );
-    }
+      return prisma.notification.update({
+        where: { id },
+        data: { isRead: true },
+      })
+    },
   },
-  
+
   socialActivity: {
     async findMany(userIds?: string[]) {
       if (userIds && userIds.length > 0) {
-        const placeholders = userIds.map((_, i) => `$${i + 1}`).join(', ');
-        return query(
-          `SELECT sa.*, u.name as user_name, u.image as user_image
-           FROM social_activities sa
-           JOIN users u ON sa.user_id = u.id
-           WHERE sa.user_id IN (${placeholders})
-           ORDER BY sa.created_at DESC
-           LIMIT 50`,
-          userIds
-        );
+        return prisma.socialActivity.findMany({
+          where: { userId: { in: userIds } },
+          include: { user: { select: { name: true, image: true } } },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+        })
       }
-      return query(
-        `SELECT sa.*, u.name as user_name, u.image as user_image
-         FROM social_activities sa
-         JOIN users u ON sa.user_id = u.id
-         ORDER BY sa.created_at DESC
-         LIMIT 50`
-      );
+      return prisma.socialActivity.findMany({
+        include: { user: { select: { name: true, image: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      })
     },
-    
+
     async create(data: any) {
-      return queryOne(
-        `INSERT INTO social_activities (user_id, activity_type, entity_type, entity_id, entity_name)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING *`,
-        [data.userId, data.activityType, data.entityType, data.entityId, data.entityName]
-      );
-    }
+      return prisma.socialActivity.create({
+        data: {
+          userId: data.userId,
+          activityType: data.activityType,
+          entityType: data.entityType,
+          entityId: data.entityId,
+          entityName: data.entityName,
+        },
+      })
+    },
   },
-  
+
   feedback: {
     async findMany() {
-      return query('SELECT * FROM feedback ORDER BY created_at DESC');
+      return prisma.feedback.findMany({ orderBy: { createdAt: 'desc' } })
     },
-    
+
     async create(data: any) {
-      return queryOne(
-        `INSERT INTO feedback (name, email, feedback, rating, category)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING *`,
-        [data.name, data.email, data.feedback, data.rating, data.category || 'general']
-      );
+      return prisma.feedback.create({
+        data: {
+          name: data.name,
+          email: data.email,
+          feedback: data.feedback,
+          rating: data.rating,
+          category: data.category || 'general',
+        },
+      })
     },
-    
+
     async delete(id: string) {
-      return query('DELETE FROM feedback WHERE id = $1', [id]);
-    }
+      return prisma.feedback.delete({ where: { id } })
+    },
   },
-  
+
   itemBlock: {
     async findByItem(itemId: string) {
-      return query('SELECT * FROM item_blocks WHERE item_id = $1', [itemId]);
+      return prisma.itemBlock.findMany({ where: { itemId } })
     },
-    
+
     async create(itemId: string, userId: string) {
-      return queryOne(
-        `INSERT INTO item_blocks (item_id, user_id)
-         VALUES ($1, $2)
-         ON CONFLICT (item_id, user_id) DO NOTHING
-         RETURNING *`,
-        [itemId, userId]
-      );
+      return prisma.itemBlock.upsert({
+        where: { itemId_userId: { itemId, userId } },
+        create: { itemId, userId },
+        update: {},
+      })
     },
-    
+
     async delete(itemId: string, userId: string) {
-      return query(
-        'DELETE FROM item_blocks WHERE item_id = $1 AND user_id = $2',
-        [itemId, userId]
-      );
-    }
+      return prisma.itemBlock.deleteMany({ where: { itemId, userId } })
+    },
   },
-  
+
   stats: {
     async getAdminStats() {
-      const userCount = await queryOne('SELECT COUNT(*) as count FROM users');
-      const listCount = await queryOne('SELECT COUNT(*) as count FROM lists');
-      const itemCount = await queryOne('SELECT COUNT(*) as count FROM list_items');
-      const eventCount = await queryOne('SELECT COUNT(*) as count FROM events');
-      
-      return {
-        totalUsers: parseInt(userCount?.count || '0'),
-        totalLists: parseInt(listCount?.count || '0'),
-        totalItems: parseInt(itemCount?.count || '0'),
-        totalEvents: parseInt(eventCount?.count || '0')
-      };
-    }
-  }
-};
+      const [totalUsers, totalLists, totalItems, totalEvents] = await Promise.all([
+        prisma.user.count(),
+        prisma.list.count(),
+        prisma.listItem.count(),
+        prisma.event.count(),
+      ])
+      return { totalUsers, totalLists, totalItems, totalEvents }
+    },
+  },
+}

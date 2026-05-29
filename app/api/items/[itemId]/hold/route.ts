@@ -41,10 +41,9 @@ export async function POST(
     })
 
     await db.notification.create({
-      data: {
-        userId: item.list.userId,
-        message: `An item on your '${item.list.name}' list has been reserved!`,
-      },
+      userId: item.list.userId,
+      message: `An item on your '${item.list.name}' list has been reserved!`,
+      isRead: false,
     })
 
     return NextResponse.json(updatedItem)

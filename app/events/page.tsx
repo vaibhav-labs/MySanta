@@ -12,7 +12,7 @@ async function getUserEvents(userId: string) {
   const eventsWithDetails = await Promise.all(
     events.map(async (event: any) => {
       const lists = await db.list.findMany(userId)
-      const eventLists = lists.filter((list: any) => list.event_id === event.id)
+      const eventLists = lists.filter((list: any) => list.eventId === event.id)
       
       // Get items for each list
       const listsWithItems = await Promise.all(
@@ -36,7 +36,7 @@ async function getUserEvents(userId: string) {
   )
   
   return eventsWithDetails.sort((a, b) => 
-    new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
+    new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
   )
 }
 
@@ -45,11 +45,11 @@ export default async function EventsPage() {
   const events = await getUserEvents(user.id)
 
   const today = new Date()
-  const upcomingEvents = events.filter(event => new Date(event.eventDate) >= today)
-  const pastEvents = events.filter(event => new Date(event.eventDate) < today)
+  const upcomingEvents = events.filter((event: any) => new Date(event.eventDate) >= today)
+  const pastEvents = events.filter((event: any) => new Date(event.eventDate) < today)
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-surface">
       <Navigation />
 
       <main className="container py-8">

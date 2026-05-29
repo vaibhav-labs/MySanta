@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
       name: event.name,
       occasion: event.occasion,
       description: event.description,
-      eventDate: event.event_date,
+      eventDate: event.eventDate,
     }))
 
     // Get all user's lists
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
     }).slice(0, 15).map((list: any) => ({
       id: list.id,
       name: list.name,
-      createdAt: list.created_at,
+      createdAt: list.createdAt,
       _count: {
         items: 0 // Will be populated below
       }
@@ -141,13 +141,13 @@ export async function GET(request: NextRequest) {
 
     // Filter items that match any variation
     const items = allItems.filter((item: any) => {
-      const itemText = `${item.product_name || ''} ${item.variants || ''} ${item.platform || ''}`.toLowerCase()
+      const itemText = `${item.productName || ''} ${item.variants || ''} ${item.platform || ''}`.toLowerCase()
       return searchVariations.some(variation => itemText.includes(variation))
     }).slice(0, 20).map((item: any) => ({
       id: item.id,
-      productName: item.product_name,
-      productUrl: item.product_url,
-      imageUrl: item.image_url,
+      productName: item.productName,
+      productUrl: item.productUrl,
+      imageUrl: item.imageUrl,
       price: item.price,
       currency: item.currency,
       platform: item.platform,

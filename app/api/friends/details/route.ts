@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
     // Get friend details
     const friendDetails = await Promise.all(
       acceptedFriendships.map(async (friendship: any) => {
-        const friendId = friendship.requester_id === currentUserId ? 
-          friendship.addressee_id : friendship.requester_id
+        const friendId = friendship.requesterId === currentUserId ?
+          friendship.addresseeId : friendship.requesterId
         
         const friend = await db.user.findById(friendId)
         if (!friend) return null
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
               id: list.id,
               name: list.name,
               itemCount: items.length,
-              eventId: list.event_id
+              eventId: list.eventId
             }
           })
         )
@@ -50,8 +50,8 @@ export async function GET(request: NextRequest) {
           name: event.name,
           occasion: event.occasion,
           description: event.description,
-          eventDate: event.event_date,
-          createdAt: event.created_at,
+          eventDate: event.eventDate,
+          createdAt: event.createdAt,
           _count: {
             lists: listsWithCounts.filter((l: any) => l.eventId === event.id).length
           }

@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
+
 import { Button } from "@/components/ui/Button"
 import { CalendarIcon, PlusIcon } from "@/components/ui/Icons"
 import { formatDate } from "@/lib/utils"
@@ -46,16 +47,19 @@ export function UpcomingEvents({ events }: UpcomingEventsProps) {
         ) : (
           <div className="space-y-3">
             {events.map((event) => (
-              <div
-                key={event.id}
-                className="p-3 border border-secondary"
-              >
-                <h3 className="font-medium text-black text-sm">{event.name}</h3>
-                <p className="text-xs text-gray-600">{event.occasion}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {formatDate(new Date(event.eventDate))}
-                </p>
-              </div>
+              <Link key={event.id} href="/events">
+                <div className="flex items-center space-x-3 p-3 rounded-xl hover:bg-surface transition-colors cursor-pointer">
+                  <div className="flex-shrink-0 w-9 h-9 rounded-full bg-brand-light flex items-center justify-center">
+                    <CalendarIcon className="w-4 h-4 text-brand" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-medium text-primary text-sm truncate">{event.name}</h3>
+                    <p className="text-xs text-gray-400">
+                      {event.occasion} · {formatDate(new Date(event.eventDate))}
+                    </p>
+                  </div>
+                </div>
+              </Link>
             ))}
           </div>
         )}

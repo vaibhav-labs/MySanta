@@ -18,15 +18,15 @@ export async function GET(request: NextRequest) {
     // Fetch events and items for each list
     const listsWithDetails = await Promise.all(
       lists.map(async (list: any) => {
-        const event = list.event_id ? await db.event.findById(list.event_id) : null
+        const event = list.eventId ? await db.event.findById(list.eventId) : null
         const items = await db.listItem.findMany(list.id)
-        
+
         return {
           ...list,
           event,
           items: items.map((item: any) => ({
             id: item.id,
-            productName: item.product_name,
+            productName: item.productName,
             status: item.status,
           })),
         }
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       eventId: eventId || null,
     })
     
-    const event = list.event_id ? await db.event.findById(list.event_id) : null
+    const event = list.eventId ? await db.event.findById(list.eventId) : null
     const items = await db.listItem.findMany(list.id)
     
     const listWithDetails = {

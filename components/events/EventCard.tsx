@@ -12,7 +12,6 @@ interface EventCardProps {
     name: string
     occasion: string
     eventDate: Date | string
-    event_date?: Date | string  // Alternative field name from database
     description?: string | null
     lists: {
       id: string
@@ -26,9 +25,7 @@ interface EventCardProps {
 }
 
 export function EventCard({ event }: EventCardProps) {
-  // Handle both eventDate and event_date field names from database
-  const dateValue = event.eventDate || event.event_date
-  const eventDate = new Date(dateValue!)
+  const eventDate = new Date(event.eventDate)
   const today = new Date()
   
   // Check if the date is valid

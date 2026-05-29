@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 import { db } from "@/lib/db"
 
 export const dynamic = 'force-dynamic'
@@ -12,40 +13,38 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get all items and filter them
-    const allItems = await db.listItem.findMany()
-    
-    // Count gifts sent (items user has purchased for others)
-    const giftsSent = allItems.filter((item: any) => 
-      item.held_by_user_id === session.user.id && item.status === "PURCHASED"
-    ).length
-    
-    // Get user's lists to count gifts received
-    const userLists = await db.list.findMany(session.user.id)
-    const userListIds = userLists.map((l: any) => l.id)
-    
-    // Count gifts received (items in user's lists that are purchased)
-    const giftsReceived = allItems.filter((item: any) => 
-      userListIds.includes(item.list_id) && item.status === "PURCHASED"
+    const userId = session.user.id
+
+    // Use targeted queries instead of fetching all items globally
+    const [giftsSent, userLists, events, friendships] = await Promise.all([
+      // Gifts sent: items held by this user that are purchased
+      prisma.listItem.count({
+        where: { heldByUserId: userId, status: "PURCHASED" },
+      }),
+      // User's lists (needed for giftsReceived)
+      prisma.list.findMany({ where: { userId }, select: { id: true } }),
+      prisma.event.count({ where: { userId } }),
+      db.friendship.findMany(userId),
+    ])
+
+    const giftsReceived = await prisma.listItem.count({
+      where: {
+        listId: { in: userLists.map((l) => l.id) },
+        status: "PURCHASED",
+      },
+    })
+
+    const friendsCount = friendships.filter(
+      (f: any) => f.status === "ACCEPTED"
     ).length
 
-    // Get user's events and lists counts
-    const events = await db.event.findMany(session.user.id)
-    const lists = await db.list.findMany(session.user.id)
-    
-    // Get friend count
-    const friendships = await db.friendship.findMany(session.user.id)
-    const friendsCount = friendships.filter((f: any) => f.status === 'ACCEPTED').length
-
-    const stats = {
+    return NextResponse.json({
       giftsSent,
       giftsReceived,
-      totalLists: lists.length,
-      totalEvents: events.length,
+      totalLists: userLists.length,
+      totalEvents: events,
       friendsCount,
-    }
-
-    return NextResponse.json(stats)
+    })
   } catch (error) {
     console.error("Error fetching user stats:", error)
     return NextResponse.json(

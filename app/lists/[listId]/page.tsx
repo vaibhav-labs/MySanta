@@ -1,4 +1,5 @@
-import { requireAuth } from "@/lib/auth-helpers"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { Navigation } from "@/components/Navigation"
 import { ListHeader } from "@/components/lists/ListHeader"
@@ -7,48 +8,44 @@ import { notFound } from "next/navigation"
 
 export const dynamic = 'force-dynamic'
 
-async function getList(listId: string, userId: string) {
+async function getList(listId: string, userId: string | null) {
   const list = await db.list.findById(listId)
-  
-  if (!list) {
-    return null
-  }
+  if (!list) return null
 
-  // Get additional details
-  const event = list.event_id ? await db.event.findById(list.event_id) : null
-  const user = await db.user.findById(list.user_id)
-  const items = await db.listItem.findMany(listId)
-  
-  // Get held by user details for items
+  const [event, owner, items] = await Promise.all([
+    list.eventId ? db.event.findById(list.eventId) : Promise.resolve(null),
+    db.user.findById(list.userId),
+    db.listItem.findMany(listId),
+  ])
+
   const itemsWithDetails = await Promise.all(
     items.map(async (item: any) => {
-      const heldByUser = item.held_by_user_id ? await db.user.findById(item.held_by_user_id) : null
+      const heldByUser = item.heldByUserId
+        ? await db.user.findById(item.heldByUserId)
+        : null
       return {
         ...item,
-        heldByUser: heldByUser ? {
-          id: heldByUser.id,
-          name: heldByUser.name,
-        } : null,
+        heldByUser: heldByUser ? { id: heldByUser.id, name: heldByUser.name } : null,
       }
     })
   )
 
-  const isOwner = list.user_id === userId
+  const isOwner = !!userId && list.userId === userId
 
-  // If not the owner, filter out purchased/received items
-  const filteredItems = isOwner ? itemsWithDetails : itemsWithDetails.filter((item: any) =>
-    !["PURCHASED", "RECEIVED", "BOUGHT_SELF", "REMOVED"].includes(item.status)
-  )
+  // Hide purchased/received items from anyone who isn't the owner
+  const filteredItems = isOwner
+    ? itemsWithDetails
+    : itemsWithDetails.filter(
+        (item: any) =>
+          !["PURCHASED", "RECEIVED", "BOUGHT_SELF", "REMOVED"].includes(item.status)
+      )
 
   return {
     ...list,
     event,
-    user: user ? {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      address: user.address,
-    } : null,
+    user: owner
+      ? { id: owner.id, name: owner.name, email: owner.email, address: owner.address }
+      : null,
     items: filteredItems,
     isOwner,
   }
@@ -59,20 +56,20 @@ export default async function ListDetailPage({
 }: {
   params: { listId: string }
 }) {
-  const user = await requireAuth()
-  const list = await getList(params.listId, user.id)
+  // No requireAuth — the page is publicly viewable
+  const session = await getServerSession(authOptions)
+  const currentUserId = session?.user?.id ?? null
 
-  if (!list) {
-    notFound()
-  }
+  const list = await getList(params.listId, currentUserId)
+  if (!list) notFound()
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-surface">
       <Navigation />
-
       <main className="container py-8">
         <ListHeader list={list} />
-        <ListItems list={list} />
+        {/* Pass currentUserId so ListItems knows whether the visitor is authenticated */}
+        <ListItems list={list} currentUserId={currentUserId} />
       </main>
     </div>
   )

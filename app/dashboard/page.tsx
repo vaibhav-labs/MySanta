@@ -1,5 +1,6 @@
 import { requireAuth } from "@/lib/auth-helpers"
 import { db } from "@/lib/db"
+import { prisma } from "@/lib/prisma"
 import { Navigation } from "@/components/Navigation"
 import { Footer } from "@/components/Footer"
 import { DashboardStats } from "@/components/dashboard/DashboardStats"
@@ -7,22 +8,16 @@ import { RecentLists } from "@/components/dashboard/RecentLists"
 import { UpcomingEvents } from "@/components/dashboard/UpcomingEvents"
 
 async function getStats(userId: string) {
-  // Get all items and filter them
-  const allItems = await db.listItem.findMany()
-  
-  // Count gifts sent (items user has purchased for others)
-  const giftsSent = allItems.filter((item: any) => 
-    item.held_by_user_id === userId && item.status === "PURCHASED"
-  ).length
-  
-  // Get user's lists to count gifts received
-  const userLists = await db.list.findMany(userId)
-  const userListIds = userLists.map((l: any) => l.id)
-  
-  // Count gifts received (items in user's lists that are purchased)
-  const giftsReceived = allItems.filter((item: any) => 
-    userListIds.includes(item.list_id) && item.status === "PURCHASED"
-  ).length
+  const userLists = await prisma.list.findMany({
+    where: { userId },
+    select: { id: true },
+  })
+  const listIds = userLists.map((l) => l.id)
+
+  const [giftsSent, giftsReceived] = await Promise.all([
+    prisma.listItem.count({ where: { heldByUserId: userId, status: "PURCHASED" } }),
+    prisma.listItem.count({ where: { listId: { in: listIds }, status: "PURCHASED" } }),
+  ])
 
   return { giftsSent, giftsReceived }
 }
@@ -33,7 +28,7 @@ async function getLists(userId: string) {
   // Get details for each list
   const listsWithDetails = await Promise.all(
     lists.slice(0, 5).map(async (list: any) => {
-      const event = list.event_id ? await db.event.findById(list.event_id) : null
+      const event = list.eventId ? await db.event.findById(list.eventId) : null
       const items = await db.listItem.findMany(list.id)
       
       return {
@@ -47,8 +42,8 @@ async function getLists(userId: string) {
     })
   )
   
-  return listsWithDetails.sort((a, b) => 
-    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  return listsWithDetails.sort((a, b) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )
 }
 
@@ -58,15 +53,15 @@ async function getEvents(userId: string) {
   // Filter for upcoming events and limit to 5
   const now = new Date()
   const upcomingEvents = events
-    .filter((event: any) => new Date(event.event_date) > now)
-    .sort((a: any, b: any) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
+    .filter((event: any) => new Date(event.eventDate) > now)
+    .sort((a: any, b: any) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
     .slice(0, 5)
   
   // Get list counts for each event
   const eventsWithCounts = await Promise.all(
     upcomingEvents.map(async (event: any) => {
       const lists = await db.list.findMany(userId)
-      const eventLists = lists.filter((list: any) => list.event_id === event.id)
+      const eventLists = lists.filter((list: any) => list.eventId === event.id)
       
       return {
         ...event,
@@ -90,7 +85,7 @@ export default async function DashboardPage() {
   ])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-surface">
       <Navigation />
 
       <main className="container py-8">

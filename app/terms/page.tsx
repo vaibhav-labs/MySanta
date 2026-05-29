@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col">
       <Navigation />
 
       <main className="flex-1 container py-8">

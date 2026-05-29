@@ -46,12 +46,12 @@ export function getUpcomingEvents(events: any[], daysAhead: number = 30) {
   futureDate.setDate(today.getDate() + daysAhead)
 
   return events.filter(event => {
-    const dateValue = event.eventDate || event.event_date
+    const dateValue = event.eventDate
     const eventDate = new Date(dateValue)
     return !isNaN(eventDate.getTime()) && eventDate >= today && eventDate <= futureDate
   }).sort((a, b) => {
-    const aDate = new Date(a.eventDate || a.event_date)
-    const bDate = new Date(b.eventDate || b.event_date)
+    const aDate = new Date(a.eventDate)
+    const bDate = new Date(b.eventDate)
     return aDate.getTime() - bDate.getTime()
   })
 }

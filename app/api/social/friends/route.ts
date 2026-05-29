@@ -19,17 +19,17 @@ export async function GET() {
     // Get friend details
     const friends = await Promise.all(
       acceptedFriendships.map(async (friendship: any) => {
-        const friendId = friendship.requester_id === session.user.id 
-          ? friendship.addressee_id 
-          : friendship.requester_id
-        
+        const friendId = friendship.requesterId === session.user.id
+          ? friendship.addresseeId
+          : friendship.requesterId
+
         const friendData = await db.user.findById(friendId)
-        
+
         return {
           id: friendship.id,
           status: friendship.status,
-          createdAt: friendship.created_at,
-          requester: friendship.requester_id === session.user.id ? {
+          createdAt: friendship.createdAt,
+          requester: friendship.requesterId === session.user.id ? {
             id: session.user.id,
             name: session.user.name,
             email: session.user.email,
@@ -40,7 +40,7 @@ export async function GET() {
             email: friendData?.email,
             gender: friendData?.gender || 'other'
           },
-          addressee: friendship.addressee_id === session.user.id ? {
+          addressee: friendship.addresseeId === session.user.id ? {
             id: session.user.id,
             name: session.user.name,
             email: session.user.email,
@@ -103,9 +103,9 @@ export async function POST(request: NextRequest) {
 
     // Check if friendship already exists
     const allFriendships = await db.friendship.findMany(session.user.id)
-    const existingFriendship = allFriendships.find((f: any) => 
-      (f.requester_id === session.user.id && f.addressee_id === user.id) ||
-      (f.requester_id === user.id && f.addressee_id === session.user.id)
+    const existingFriendship = allFriendships.find((f: any) =>
+      (f.requesterId === session.user.id && f.addresseeId === user.id) ||
+      (f.requesterId === user.id && f.addresseeId === session.user.id)
     )
 
     if (existingFriendship) {

@@ -47,10 +47,9 @@ export async function POST(
     })
 
     await db.notification.create({
-      data: {
-        userId: item.list.userId,
-        message: `A gift from your '${item.list.name}' list has been purchased!`,
-      },
+      userId: item.list.userId,
+      message: `A gift from your '${item.list.name}' list has been purchased!`,
+      isRead: false,
     })
 
     return NextResponse.json(updatedItem)

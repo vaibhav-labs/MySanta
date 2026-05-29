@@ -1,29 +1,33 @@
 import { NextAuthOptions } from "next-auth"
-import { SupabaseAdapter } from "./supabase-adapter"
+import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
+import { prisma } from "./prisma"
 import { db } from "./db"
 
 export const authOptions: NextAuthOptions = {
-  adapter: SupabaseAdapter() as any,
+  adapter: PrismaAdapter(prisma),
   providers: [
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
-      GoogleProvider({
-        clientId: process.env.GOOGLE_CLIENT_ID!,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-        authorization: {
-          params: {
-            scope: "openid email profile https://www.googleapis.com/auth/contacts.readonly"
-          }
-        }
-      })
-    ] : []),
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            authorization: {
+              params: {
+                scope:
+                  "openid email profile https://www.googleapis.com/auth/contacts.readonly",
+              },
+            },
+          }),
+        ]
+      : []),
     CredentialsProvider({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -32,13 +36,13 @@ export const authOptions: NextAuthOptions = {
 
         const user = await db.user.findByEmail(credentials.email)
 
-        if (!user || !user.hashed_password) {
+        if (!user || !user.hashedPassword) {
           return null
         }
 
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
-          user.hashed_password
+          user.hashedPassword
         )
 
         if (!isPasswordValid) {
@@ -51,11 +55,11 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
         }
-      }
-    })
+      },
+    }),
   ],
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
   },
   pages: {
     signIn: "/sign-in",
@@ -77,6 +81,6 @@ export const authOptions: NextAuthOptions = {
         session.accessToken = token.accessToken as string
       }
       return session
-    }
-  }
+    },
+  },
 }

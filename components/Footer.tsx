@@ -10,8 +10,15 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <span>🎁</span>
-              <span className="text-xl font-semibold text-black">MySanta</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-brand">
+                <rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.8"/>
+                <path d="M12 11V22" stroke="currentColor" strokeWidth="1.8"/>
+                <rect x="3" y="7" width="18" height="4" rx="1" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="1.8"/>
+                <path d="M12 7C12 7 10 3 12 3C14 3 12 7 12 7Z" fill="currentColor"/>
+                <path d="M12 7C12 7 8 5 10 3C12 1 12 7 12 7Z" fill="currentColor"/>
+                <path d="M12 7C12 7 16 5 14 3C12 1 12 7 12 7Z" fill="currentColor"/>
+              </svg>
+              <span className="text-lg font-bold text-primary">MySanta</span>
             </div>
             <p className="text-gray-600 text-sm max-w-md">
               The perfect platform for creating and sharing gift lists. Make every occasion special

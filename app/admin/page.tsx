@@ -1,70 +1,70 @@
 import { requireAdmin } from "@/lib/auth-helpers"
-import { db } from "@/lib/db"
+import { prisma } from "@/lib/prisma"
 import { Navigation } from "@/components/Navigation"
 import { AdminStats } from "@/components/admin/AdminStats"
 import { UserManagement } from "@/components/admin/UserManagement"
 
 async function getAdminStats() {
-  const stats = await db.stats.getAdminStats()
-  
-  // Get purchased items count
-  const allItems = await db.listItem.findMany()
-  const totalPurchases = allItems.filter((item: any) => item.status === 'PURCHASED').length
-  
-  // Get new users this month
-  const allUsers = await db.user.findMany()
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-  const newUsersThisMonth = allUsers.filter((user: any) => new Date(user.created_at) >= monthStart).length
+  const [totalUsers, totalLists, totalItems, totalEvents, totalPurchases, newUsersThisMonth] =
+    await Promise.all([
+      prisma.user.count(),
+      prisma.list.count(),
+      prisma.listItem.count(),
+      prisma.event.count(),
+      prisma.listItem.count({ where: { status: "PURCHASED" } }),
+      prisma.user.count({
+        where: {
+          createdAt: {
+            gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          },
+        },
+      }),
+    ])
 
-  return {
-    totalUsers: stats.totalUsers,
-    totalLists: stats.totalLists,
-    totalItems: stats.totalItems,
-    totalPurchases,
-    newUsersThisMonth,
-  }
+  return { totalUsers, totalLists, totalItems, totalEvents, totalPurchases, newUsersThisMonth }
 }
 
 async function getUsers(page: number = 1, limit: number = 10) {
   const skip = (page - 1) * limit
 
-  const allUsers = await db.user.findMany()
-  const totalCount = allUsers.length
-  
-  // Sort by created_at desc and paginate
-  const sortedUsers = allUsers.sort((a: any, b: any) => 
-    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  )
-  const users = sortedUsers.slice(skip, skip + limit)
-  
-  // Get counts for each user
+  const [allUsersRaw, totalCount] = await Promise.all([
+    prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        _count: { select: { lists: true } },
+      },
+    }),
+    prisma.user.count(),
+  ])
+
   const usersWithCounts = await Promise.all(
-    users.map(async (user: any) => {
-      const lists = await db.list.findMany(user.id)
-      const items = await db.listItem.findMany()
-      const userPurchases = items.filter((item: any) => 
-        item.held_by_user_id === user.id && item.status === 'PURCHASED'
-      ).length
-      
+    allUsersRaw.map(async (user) => {
+      const itemsHeld = await prisma.listItem.count({
+        where: { heldByUserId: user.id, status: "PURCHASED" },
+      })
       return {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role,
-        createdAt: user.created_at,
+        role: user.role as "USER" | "ADMIN",
+        createdAt: user.createdAt,
         _count: {
-          lists: lists.length,
-          itemsHeld: userPurchases,
+          lists: user._count.lists,
+          itemsHeld,
         },
       }
     })
   )
 
   return {
-    users: usersWithCounts.map(user => ({
-      ...user,
-      role: user.role as "USER" | "ADMIN"
-    })),
+    users: usersWithCounts,
     totalCount,
     totalPages: Math.ceil(totalCount / limit),
   }
@@ -84,7 +84,7 @@ export default async function AdminPage({
   ])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-surface">
       <Navigation />
 
       <main className="container py-8">

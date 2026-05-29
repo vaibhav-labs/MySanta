@@ -126,7 +126,7 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-surface">
         <Navigation />
         <main className="container py-8">
           <div className="max-w-2xl mx-auto text-center">
@@ -140,7 +140,7 @@ export default function ProfilePage() {
   const GenderIcon = getGenderIcon(profile.gender)
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-surface">
       <Navigation />
 
       <main className="container py-8">

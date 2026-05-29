@@ -17,9 +17,9 @@ export async function GET() {
     const acceptedFriendships = allFriendships.filter((f: any) => f.status === 'ACCEPTED')
     
     const friendIds = acceptedFriendships.map((friendship: any) =>
-      friendship.requester_id === session.user.id
-        ? friendship.addressee_id
-        : friendship.requester_id
+      friendship.requesterId === session.user.id
+        ? friendship.addresseeId
+        : friendship.requesterId
     )
 
     // Include user's own activities

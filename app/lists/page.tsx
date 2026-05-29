@@ -10,7 +10,7 @@ async function getUserLists(userId: string) {
   // Get details for each list
   const listsWithDetails = await Promise.all(
     lists.map(async (list: any) => {
-      const event = list.event_id ? await db.event.findById(list.event_id) : null
+      const event = list.eventId ? await db.event.findById(list.eventId) : null
       const items = await db.listItem.findMany(list.id)
       
       return {
@@ -25,7 +25,7 @@ async function getUserLists(userId: string) {
   )
   
   return listsWithDetails.sort((a, b) => 
-    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )
 }
 
@@ -34,7 +34,7 @@ export default async function ListsPage() {
   const lists = await getUserLists(user.id)
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-surface">
       <Navigation />
 
       <main className="container py-8">
