@@ -15,7 +15,7 @@ export function DashboardStats({ stats, userName }: DashboardStatsProps) {
         <h1 className="font-display text-5xl text-white leading-none">{first}</h1>
         <div className="flex items-center gap-2 mt-2">
           <div className="w-2 h-2 bg-brand" />
-          <p className="text-xs" style={{color:'rgba(255,255,255,0.5)'}}>Here's the vibe check on your gifts</p>
+          <p className="text-xs" style={{color:'rgba(255,255,255,0.5)'}}>Here's where your gifting stands</p>
         </div>
       </div>
 

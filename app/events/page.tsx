@@ -55,11 +55,11 @@ export default async function EventsPage() {
       <main className="container py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-semibold text-black mb-2">
-              Events
+            <h1 className="font-display text-ink mb-2" style={{fontSize:'clamp(2.5rem,5vw,4rem)', lineHeight:'0.95'}}>
+              Your <span className="bg-brand px-1">Events.</span>
             </h1>
-            <p className="text-gray-600">
-              Manage your special occasions and gift lists.
+            <p className="text-gray-500">
+              Birthdays, weddings, whatever's coming up. Each one gets a list.
             </p>
           </div>
           <Link href="/events/new">
@@ -69,11 +69,11 @@ export default async function EventsPage() {
 
         {events.length === 0 ? (
           <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-black mb-2">
-              No events yet
+            <h3 className="font-display text-2xl text-ink mb-2">
+              Nothing on the calendar yet.
             </h3>
-            <p className="text-gray-600 mb-6">
-              Create your first event and get an automatic gift list!
+            <p className="text-gray-500 mb-6">
+              Add an event and a gift list comes with it.
             </p>
             <Link href="/events/new">
               <Button>Create Your First Event</Button>

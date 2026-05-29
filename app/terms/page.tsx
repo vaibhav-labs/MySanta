@@ -9,12 +9,14 @@ export default function TermsPage() {
 
       <main className="flex-1 container py-8">
         <div className="max-w-4xl mx-auto">
+          <div className="mb-10">
+            <h1 className="font-display text-ink mb-2" style={{fontSize:'clamp(2.5rem,5vw,4rem)', lineHeight:'0.95'}}>
+              <span className="bg-brand px-1">Terms.</span>
+            </h1>
+            <p className="text-xs font-bold uppercase tracking-widest" style={{color:'#9CA3AF'}}>Last updated: {new Date().toLocaleDateString()}</p>
+          </div>
           <Card>
-            <CardHeader>
-              <CardTitle>Terms and Conditions</CardTitle>
-              <p className="text-gray-600">Last updated: {new Date().toLocaleDateString()}</p>
-            </CardHeader>
-            <CardContent className="prose max-w-none">
+            <CardContent className="prose max-w-none pt-6">
               <h2>1. Acceptance of Terms</h2>
               <p>
                 By accessing and using MySanta ("the Service"), you accept and agree to be bound by the terms

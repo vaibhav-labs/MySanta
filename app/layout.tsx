@@ -5,7 +5,15 @@ import { Toaster } from "react-hot-toast"
 
 export const metadata: Metadata = {
   title: "MySanta — Your Wishlist. Their Move.",
-  description: "Create wishlists for any occasion. Share one link. Get exactly what you want — no hints, no duplicates, no awkward gifts.",
+  description: "Make a wishlist for any occasion. Share one link. Get exactly what you wanted — no hints, no duplicates, no awkward gifts.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-icon.svg",
+    shortcut: "/icon.svg",
+  },
 }
 
 export default function RootLayout({
@@ -26,7 +34,7 @@ export default function RootLayout({
                 background: '#fff',
                 color: '#0D0D0D',
                 border: '1px solid #E5E5E5',
-                fontFamily: 'Inter, sans-serif',
+                fontFamily: 'DM Sans, sans-serif',
                 fontSize: '13px',
               },
             }}
