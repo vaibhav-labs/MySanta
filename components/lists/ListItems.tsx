@@ -44,6 +44,8 @@ export function ListItems({ list, currentUserId }: ListItemsProps) {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [selectedItem, setSelectedItem] = useState<ListItem | null>(null)
   const [items, setItems] = useState(list.items)
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({ productName: "", productUrl: "", price: "", variants: "", quantity: "1" })
 
   const isGuest = !currentUserId
 
@@ -136,6 +138,59 @@ export function ListItems({ list, currentUserId }: ListItemsProps) {
       if (!response.ok) { toast.error((await response.json()).error || "Failed to copy item"); return }
       toast.success("Item saved to your list!")
     } catch { toast.error("Failed to copy item") }
+  }
+
+  const handleDeleteItem = async (itemId: string) => {
+    if (!confirm("Are you sure you want to delete this item? This action cannot be undone.")) return
+
+    try {
+      const response = await fetch(`/api/items/${itemId}`, { method: "DELETE" })
+      if (!response.ok) { toast.error((await response.json()).error || "Failed to delete item"); return }
+      setItems(prev => prev.filter(item => item.id !== itemId))
+      toast.success("Item deleted successfully")
+    } catch { toast.error("Failed to delete item") }
+  }
+
+  const handleStartEdit = (item: ListItem) => {
+    setEditingItemId(item.id)
+    setEditForm({
+      productName: item.productName,
+      productUrl: item.productUrl,
+      price: item.price?.toString() || "",
+      variants: item.variants || "",
+      quantity: item.quantity?.toString() || "1"
+    })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingItemId(null)
+    setEditForm({ productName: "", productUrl: "", price: "", variants: "", quantity: "1" })
+  }
+
+  const handleSaveEdit = async (itemId: string) => {
+    const updates: any = {
+      productName: editForm.productName,
+      productUrl: editForm.productUrl,
+      variants: editForm.variants || null,
+      quantity: parseInt(editForm.quantity) || 1
+    }
+
+    if (editForm.price) {
+      updates.price = parseFloat(editForm.price)
+    }
+
+    try {
+      const response = await fetch(`/api/items/${itemId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      })
+      if (!response.ok) { toast.error((await response.json()).error || "Failed to update item"); return }
+      const updatedItem = await response.json()
+      setItems(prev => prev.map(item => item.id === itemId ? updatedItem : item))
+      setEditingItemId(null)
+      toast.success("Item updated successfully")
+    } catch { toast.error("Failed to update item") }
   }
 
   return (
@@ -344,16 +399,87 @@ export function ListItems({ list, currentUserId }: ListItemsProps) {
 
                     {/* Owner actions */}
                     {list.isOwner && (
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" className="flex-1 flex items-center justify-center space-x-1">
-                          <EditIcon className="w-4 h-4" />
-                          <span>Edit</span>
-                        </Button>
-                        <Button variant="outline" size="sm" className="flex-1 flex items-center justify-center space-x-1">
-                          <DeleteIcon className="w-4 h-4" />
-                          <span>Delete</span>
-                        </Button>
-                      </div>
+                      editingItemId === item.id ? (
+                        <div className="space-y-2">
+                          <div className="space-y-2">
+                            <input
+                              type="text"
+                              value={editForm.productName}
+                              onChange={(e) => setEditForm({ ...editForm, productName: e.target.value })}
+                              placeholder="Product name"
+                              className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                            />
+                            <input
+                              type="url"
+                              value={editForm.productUrl}
+                              onChange={(e) => setEditForm({ ...editForm, productUrl: e.target.value })}
+                              placeholder="Product URL"
+                              className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                            />
+                            <div className="flex space-x-1">
+                              <input
+                                type="number"
+                                value={editForm.price}
+                                onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
+                                placeholder="Price"
+                                className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded"
+                              />
+                              <input
+                                type="number"
+                                value={editForm.quantity}
+                                onChange={(e) => setEditForm({ ...editForm, quantity: e.target.value })}
+                                placeholder="Qty"
+                                className="w-16 px-2 py-1 text-xs border border-gray-300 rounded"
+                              />
+                            </div>
+                            <input
+                              type="text"
+                              value={editForm.variants}
+                              onChange={(e) => setEditForm({ ...editForm, variants: e.target.value })}
+                              placeholder="Variants (optional)"
+                              className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                            />
+                          </div>
+                          <div className="flex space-x-1">
+                            <Button
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => handleSaveEdit(item.id)}
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1"
+                              onClick={handleCancelEdit}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 flex items-center justify-center space-x-1"
+                            onClick={() => handleStartEdit(item)}
+                          >
+                            <EditIcon className="w-4 h-4" />
+                            <span>Edit</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 flex items-center justify-center space-x-1"
+                            onClick={() => handleDeleteItem(item.id)}
+                          >
+                            <DeleteIcon className="w-4 h-4" />
+                            <span>Delete</span>
+                          </Button>
+                        </div>
+                      )
                     )}
                   </div>
                 </div>
