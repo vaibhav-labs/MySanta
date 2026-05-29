@@ -14,7 +14,7 @@ export function SupabaseAdapter(): Adapter {
         email: newUser.email,
         name: newUser.name,
         image: newUser.image,
-        emailVerified: newUser.email_verified,
+        emailVerified: newUser.emailVerified,
       };
     },
     
@@ -27,7 +27,7 @@ export function SupabaseAdapter(): Adapter {
         email: user.email,
         name: user.name,
         image: user.image,
-        emailVerified: user.email_verified,
+        emailVerified: user.emailVerified,
       };
     },
     
@@ -40,7 +40,7 @@ export function SupabaseAdapter(): Adapter {
         email: user.email,
         name: user.name,
         image: user.image,
-        emailVerified: user.email_verified,
+        emailVerified: user.emailVerified,
       };
     },
     
@@ -48,7 +48,7 @@ export function SupabaseAdapter(): Adapter {
       const account = await db.account.findUnique(provider, providerAccountId);
       if (!account) return null;
       
-      const user = await db.user.findById(account.user_id);
+      const user = await db.user.findById(account.userId);
       if (!user) return null;
       
       return {
@@ -56,7 +56,7 @@ export function SupabaseAdapter(): Adapter {
         email: user.email,
         name: user.name,
         image: user.image,
-        emailVerified: user.email_verified,
+        emailVerified: user.emailVerified,
       };
     },
     
@@ -65,7 +65,7 @@ export function SupabaseAdapter(): Adapter {
       if (user.name !== undefined) updates.name = user.name;
       if (user.email !== undefined) updates.email = user.email;
       if (user.image !== undefined) updates.image = user.image;
-      if (user.emailVerified !== undefined) updates.email_verified = user.emailVerified;
+      if (user.emailVerified !== undefined) updates.emailVerified = user.emailVerified;
       
       const updatedUser = await db.user.update(user.id!, updates);
       
@@ -74,7 +74,7 @@ export function SupabaseAdapter(): Adapter {
         email: updatedUser.email,
         name: updatedUser.name,
         image: updatedUser.image,
-        emailVerified: updatedUser.email_verified,
+        emailVerified: updatedUser.emailVerified,
       };
     },
     
@@ -110,8 +110,8 @@ export function SupabaseAdapter(): Adapter {
       });
       
       return {
-        sessionToken: session.session_token,
-        userId: session.user_id,
+        sessionToken: session.sessionToken,
+        userId: session.userId,
         expires: session.expires,
       };
     },
@@ -120,13 +120,13 @@ export function SupabaseAdapter(): Adapter {
       const session = await db.session.findUnique(sessionToken);
       if (!session) return null;
       
-      const user = await db.user.findById(session.user_id);
+      const user = await db.user.findById(session.userId);
       if (!user) return null;
       
       return {
         session: {
-          sessionToken: session.session_token,
-          userId: session.user_id,
+          sessionToken: session.sessionToken,
+          userId: session.userId,
           expires: session.expires,
         },
         user: {
@@ -134,7 +134,7 @@ export function SupabaseAdapter(): Adapter {
           email: user.email,
           name: user.name,
           image: user.image,
-          emailVerified: user.email_verified,
+          emailVerified: user.emailVerified,
         },
       };
     },

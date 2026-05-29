@@ -10,9 +10,11 @@ interface ListHeaderProps {
     id: string
     name: string
     user: {
+      id: string
       name: string | null
       email: string
-    }
+      address: string | null
+    } | null
     event?: {
       name: string
       eventDate: Date
@@ -32,7 +34,7 @@ export function ListHeader({ list }: ListHeaderProps) {
               For {list.event.name} on {formatDate(new Date(list.event.eventDate))}
             </p>
           )}
-          {!list.isOwner && (
+          {!list.isOwner && list.user && (
             <p className="text-sm text-gray-500 mt-1">
               Created by {list.user.name || list.user.email}
             </p>
@@ -49,7 +51,7 @@ export function ListHeader({ list }: ListHeaderProps) {
 
       {!list.isOwner && (
         <div className="bg-gray-50 border border-secondary p-4 mb-6">
-          <h3 className="font-medium text-black mb-2">Shopping for {list.user.name || "someone special"}?</h3>
+          <h3 className="font-medium text-black mb-2">Shopping for {list.user?.name || "someone special"}?</h3>
           <p className="text-sm text-gray-600">
             Select items to hold, then proceed to purchase them. The recipient will be notified when gifts are purchased.
           </p>

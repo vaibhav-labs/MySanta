@@ -31,7 +31,7 @@ interface ListItemsProps {
   list: {
     id: string
     isOwner: boolean
-    user: { id: string; name: string | null; address: any }
+    user: { id: string; name: string | null; email: string; address: string | null } | null
     items: ListItem[]
   }
   currentUserId: string | null
@@ -315,7 +315,7 @@ export function ListItems({ list, currentUserId }: ListItemsProps) {
           isOpen={showPurchaseModal}
           onClose={() => { setShowPurchaseModal(false); setSelectedItem(null) }}
           item={selectedItem}
-          recipientAddress={list.user.address}
+          recipientAddress={list.user?.address || null}
           onPurchaseComplete={() => handlePurchaseComplete(selectedItem.id)}
         />
       )}
