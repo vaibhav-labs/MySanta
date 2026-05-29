@@ -4,8 +4,9 @@ import { Providers } from "@/components/Providers"
 import { Toaster } from "react-hot-toast"
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.mysanta.fun"),
   title: "MySanta — Your Wishlist. Their Move.",
-  description: "Make a wishlist for any occasion. Share one link. Get exactly what you wanted — no hints, no duplicates, no awkward gifts.",
+  description: "Make a wishlist for any occasion. Share one link. No more duplicate gifts, no more guessing.",
   icons: {
     icon: [
       { url: "/icon.svg", type: "image/svg+xml" },
@@ -13,6 +14,27 @@ export const metadata: Metadata = {
     ],
     apple: "/apple-icon.svg",
     shortcut: "/icon.svg",
+  },
+  openGraph: {
+    type: "website",
+    url: "https://www.mysanta.fun",
+    siteName: "MySanta",
+    title: "MySanta — Your Wishlist. Their Move.",
+    description: "Make a wishlist for any occasion. Share one link. No more duplicate gifts, no more guessing.",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "MySanta — Your Wishlist. Their Move.",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MySanta — Your Wishlist. Their Move.",
+    description: "Make a wishlist for any occasion. Share one link. No more duplicate gifts, no more guessing.",
+    images: ["/opengraph-image"],
   },
 }
 
