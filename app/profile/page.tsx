@@ -65,18 +65,7 @@ export default function ProfilePage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    if (name.startsWith("address.")) {
-      const addressField = name.split(".")[1]
-      setFormData(prev => ({
-        ...prev,
-        address: {
-          ...prev.address,
-          [addressField]: value,
-        },
-      }))
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }))
-    }
+    setFormData(prev => ({ ...prev, [name]: value }))
   }
 
   const handleSave = async () => {
