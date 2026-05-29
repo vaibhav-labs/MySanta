@@ -119,6 +119,6 @@ export function Navigation() {
 
 function BrandMark() {
   return (
-    <span className="font-display font-bold text-xl text-ink tracking-tight">MySanta</span>
+    <span className="font-display text-2xl text-ink" style={{letterSpacing:'0.01em'}}>MySanta</span>
   )
 }

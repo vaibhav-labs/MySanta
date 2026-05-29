@@ -10,29 +10,25 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans:    ['"DM Sans"', 'sans-serif'],
-        display: ['Syne', 'sans-serif'],
+        display: ['"Barlow Condensed"', 'sans-serif'],
       },
       colors: {
         primary:   { DEFAULT: '#0D0D0D' },
         secondary: { DEFAULT: '#E8E8E8' },
-        surface:   { DEFAULT: '#F8F7FF' },
-        hover:     { DEFAULT: '#F0EEFF' },
+        surface:   { DEFAULT: '#F5F5F5' },
+        hover:     { DEFAULT: '#F0F0F0' },
         ink:       { DEFAULT: '#0D0D0D' },
-        chalk:     { DEFAULT: '#FFFFFF' },
         brand: {
-          DEFAULT: '#7C3AED',   // deep electric purple — Gen Alpha primary
-          dark:    '#6D28D9',
-          light:   '#EDE9FE',
-          yellow:  '#FFD600',   // punchy yellow accent
-          coral:   '#FF5C3A',   // coral pop
-          pink:    '#EC4899',   // hot pink
-          cyan:    '#06B6D4',   // electric cyan
+          DEFAULT: '#FFD600',   // yellow — primary energy
+          dark:    '#E6C200',
+          light:   '#FFF8CC',
+          red:     '#E63946',   // cool brick red — secondary energy
+          'red-light': '#FEE2E4',
         },
       },
       boxShadow: {
         card:        '0 1px 4px rgba(0,0,0,0.06)',
-        'card-hover':'0 8px 24px rgba(124,58,237,0.12)',
-        glow:        '0 0 40px rgba(124,58,237,0.3)',
+        'card-hover':'0 8px 24px rgba(0,0,0,0.10)',
       },
     },
   },
