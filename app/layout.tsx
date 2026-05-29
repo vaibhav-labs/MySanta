@@ -1,14 +1,11 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/Providers"
 import { Toaster } from "react-hot-toast"
 
-const inter = Inter({ subsets: ["latin"] })
-
 export const metadata: Metadata = {
-  title: "MySanta - Gift List Manager",
-  description: "Manage your gift lists and share them with friends and family",
+  title: "MySanta — Your Wishlist. Their Move.",
+  description: "Create wishlists for any occasion. Share one link. Get exactly what you want — no hints, no duplicates, no awkward gifts.",
 }
 
 export default function RootLayout({
@@ -18,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body>
         <Providers>
           {children}
           <Toaster
@@ -27,8 +24,10 @@ export default function RootLayout({
               duration: 4000,
               style: {
                 background: '#fff',
-                color: '#000',
+                color: '#0D0D0D',
                 border: '1px solid #E5E5E5',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: '13px',
               },
             }}
           />
