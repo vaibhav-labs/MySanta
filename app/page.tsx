@@ -30,7 +30,7 @@ export default async function HomePage() {
           <div className="flex h-14 items-center justify-between">
             <span className="font-display text-2xl tracking-wider text-ink uppercase">MySanta</span>
             <div className="hidden md:flex items-center space-x-8 text-xs font-semibold uppercase tracking-widest text-gray-500">
-              <Link href="/sign-in" className="hover:text-ink transition-colors">How it works</Link>
+              <Link href="/how-it-works" className="hover:text-ink transition-colors">How it works</Link>
               <Link href="/sign-in" className="hover:text-ink transition-colors">Events</Link>
               <Link href="/sign-in" className="hover:text-ink transition-colors">Friends</Link>
             </div>
@@ -73,9 +73,9 @@ export default async function HomePage() {
                     Create my wishlist →
                   </button>
                 </Link>
-                <Link href="/sign-in">
+                <Link href="/how-it-works">
                   <button className="border border-ink text-ink text-sm font-bold uppercase tracking-widest px-8 py-4 hover:bg-surface transition-colors w-full sm:w-auto">
-                    Sign In
+                    See how it works →
                   </button>
                 </Link>
               </div>
