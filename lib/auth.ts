@@ -1,12 +1,13 @@
 import { NextAuthOptions } from "next-auth"
+import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
+import { prisma } from "./prisma"
 import { db } from "./db"
-import { SupabaseAdapter } from "./supabase-adapter"
 
 export const authOptions: NextAuthOptions = {
-  adapter: SupabaseAdapter(),
+  adapter: PrismaAdapter(prisma),
   providers: [
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? [
@@ -15,8 +16,7 @@ export const authOptions: NextAuthOptions = {
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
             authorization: {
               params: {
-                scope:
-                  "openid email profile https://www.googleapis.com/auth/contacts.readonly",
+                scope: "openid email profile",
               },
             },
           }),
@@ -29,24 +29,16 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
-        }
+        if (!credentials?.email || !credentials?.password) return null
 
         const user = await db.user.findByEmail(credentials.email)
-
-        if (!user || !user.hashedPassword) {
-          return null
-        }
+        if (!user || !user.hashedPassword) return null
 
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
           user.hashedPassword
         )
-
-        if (!isPasswordValid) {
-          return null
-        }
+        if (!isPasswordValid) return null
 
         return {
           id: user.id,
@@ -57,18 +49,11 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-  session: {
-    strategy: "jwt",
-  },
-  pages: {
-    signIn: "/sign-in",
-  },
-  debug: process.env.NODE_ENV === "development",
+  session: { strategy: "jwt" },
+  pages: { signIn: "/sign-in" },
   callbacks: {
     async jwt({ token, user, account }) {
-      if (user) {
-        token.id = user.id
-      }
+      if (user) token.id = user.id
       if (account?.provider === "google" && account?.access_token) {
         token.accessToken = account.access_token
       }
