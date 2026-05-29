@@ -24,8 +24,11 @@ export async function GET(
 
     const isListOwner = isOwner(session.user.id, list.userId)
 
+    // Fetch items separately — list object does not include them by default
+    let items = await db.listItem.findMany(params.listId)
+
     if (!isListOwner) {
-      list.items = list.items.filter(
+      items = items.filter(
         (item: any) =>
           !["PURCHASED", "RECEIVED", "BOUGHT_SELF", "REMOVED"].includes(
             item.status
@@ -33,7 +36,7 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ ...list, isOwner: isListOwner })
+    return NextResponse.json({ ...list, items, isOwner: isListOwner })
   } catch (error) {
     console.error("Error fetching list:", error)
     return NextResponse.json(
