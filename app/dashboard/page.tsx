@@ -89,18 +89,9 @@ export default async function DashboardPage() {
       <Navigation />
 
       <main className="container py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-black mb-2">
-            Welcome back, {user.name || user.email}
-          </h1>
-          <p className="text-gray-600">
-            Here's what's happening with your gifts and events.
-          </p>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           <div className="lg:col-span-2">
-            <DashboardStats stats={stats} />
+            <DashboardStats stats={stats} userName={user.name} />
           </div>
           <div>
             <UpcomingEvents events={events} />

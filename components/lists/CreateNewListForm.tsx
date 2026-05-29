@@ -4,19 +4,55 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
+import { Select } from "@/components/ui/Select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { toast } from "react-hot-toast"
 
+// Predefined list categories
+const LIST_CATEGORIES = [
+  { value: "", label: "Select a category..." },
+  { value: "Birthday", label: "🎂 Birthday" },
+  { value: "Christmas", label: "🎄 Christmas" },
+  { value: "Wedding", label: "💍 Wedding" },
+  { value: "Baby Shower", label: "👶 Baby Shower" },
+  { value: "Graduation", label: "🎓 Graduation" },
+  { value: "Anniversary", label: "💕 Anniversary" },
+  { value: "Housewarming", label: "🏠 Housewarming" },
+  { value: "Toys", label: "🧸 Toys" },
+  { value: "Books", label: "📚 Books" },
+  { value: "Electronics", label: "📱 Electronics" },
+  { value: "Gadgets", label: "⚡ Gadgets" },
+  { value: "Clothing", label: "👕 Clothing" },
+  { value: "Home & Garden", label: "🏡 Home & Garden" },
+  { value: "Sports", label: "⚽ Sports" },
+  { value: "Travel", label: "✈️ Travel" },
+  { value: "Beauty", label: "💄 Beauty" },
+  { value: "Health", label: "🏃 Health & Fitness" },
+  { value: "Custom", label: "✏️ Custom Name" },
+]
+
 export function CreateNewListForm() {
   const [loading, setLoading] = useState(false)
-  const [name, setName] = useState("")
+  const [category, setCategory] = useState("")
+  const [customName, setCustomName] = useState("")
   const [error, setError] = useState("")
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim()) {
-      setError("List name is required")
+
+    // Determine the final list name
+    let listName = ""
+    if (category === "Custom") {
+      if (!customName.trim()) {
+        setError("Custom list name is required")
+        return
+      }
+      listName = customName.trim()
+    } else if (category) {
+      listName = category
+    } else {
+      setError("Please select a category")
       return
     }
 
@@ -27,7 +63,7 @@ export function CreateNewListForm() {
       const response = await fetch("/api/lists", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() }),
+        body: JSON.stringify({ name: listName }),
       })
 
       if (!response.ok) {
@@ -53,26 +89,36 @@ export function CreateNewListForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="List Name"
-            value={name}
+          <Select
+            label="List Category"
+            value={category}
             onChange={(e) => {
-              setName(e.target.value)
+              setCategory(e.target.value)
               if (error) setError("")
             }}
+            options={LIST_CATEGORIES}
             error={error}
-            placeholder="My Birthday List"
             required
           />
 
+          {category === "Custom" && (
+            <Input
+              label="Custom List Name"
+              value={customName}
+              onChange={(e) => {
+                setCustomName(e.target.value)
+                if (error) setError("")
+              }}
+              placeholder="My Special List"
+              required
+            />
+          )}
+
           <div className="space-y-2 text-sm text-gray-600">
-            <p>Examples:</p>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Birthday Wishes 🎂</li>
-              <li>Christmas List 🎄</li>
-              <li>Wedding Registry 💍</li>
-              <li>Baby Shower 👶</li>
-            </ul>
+            <p>Choose a category or create your own custom list name!</p>
+            <div className="bg-gray-50 rounded-lg p-3 text-xs">
+              <strong>Popular categories:</strong> Birthday, Christmas, Toys, Books, Electronics, Gadgets
+            </div>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
