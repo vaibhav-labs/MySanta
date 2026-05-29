@@ -14,18 +14,22 @@ import { toast } from "react-hot-toast"
 interface ListItem {
   id: string
   productName: string
-  productUrl: string
+  productUrl?: string | null
   imageUrl?: string | null
   price?: number | null
   currency?: string
   variants?: string | null
-  platform: string
+  platform?: string | null
   quantity?: number
   status: string
   heldByUser?: { id: string; name: string | null } | null
   collaboratorIds?: string | null
   blockCount?: number
   isBlockedByUser?: boolean
+  itemType?: string | null
+  notes?: string | null
+  location?: string | null
+  experienceDate?: string | null
 }
 
 interface ListItemsProps {
@@ -155,7 +159,7 @@ export function ListItems({ list, currentUserId }: ListItemsProps) {
     setEditingItemId(item.id)
     setEditForm({
       productName: item.productName,
-      productUrl: item.productUrl,
+      productUrl: item.productUrl || "",
       price: item.price?.toString() || "",
       variants: item.variants || "",
       quantity: item.quantity?.toString() || "1"
@@ -256,6 +260,13 @@ export function ListItems({ list, currentUserId }: ListItemsProps) {
                 />
 
                 <div className="p-4">
+                  {item.itemType && item.itemType !== "PRODUCT" && (
+                    <span className="inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 mb-2"
+                      style={{ background: item.itemType === "EXPERIENCE" ? '#FEE2E4' : '#FFF8CC', color: item.itemType === "EXPERIENCE" ? '#E63946' : '#0D0D0D' }}>
+                      {item.itemType === "EXPERIENCE" ? "Experience" : "Offline"}
+                    </span>
+                  )}
+
                   <h3 className="font-semibold text-primary mb-1.5 line-clamp-2">{item.productName}</h3>
 
                   {item.price && (
@@ -272,7 +283,25 @@ export function ListItems({ list, currentUserId }: ListItemsProps) {
                     <p className="text-xs text-gray-500 mb-1">Qty: {item.quantity}</p>
                   )}
 
-                  <p className="text-xs text-gray-400 mb-2">From {item.platform}</p>
+                  {item.experienceDate && (
+                    <p className="text-xs text-gray-500 mb-1">
+                      {new Date(item.experienceDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  )}
+
+                  {item.location && (
+                    <p className="text-xs text-gray-500 mb-1">{item.location}</p>
+                  )}
+
+                  {item.platform && (
+                    <p className="text-xs text-gray-400 mb-2">
+                      {item.itemType === "EXPERIENCE" ? "Via" : "From"} {item.platform}
+                    </p>
+                  )}
+
+                  {item.notes && (
+                    <p className="text-xs text-gray-500 mb-2 italic line-clamp-3">{item.notes}</p>
+                  )}
 
                   {item.blockCount && item.blockCount > 0 && (
                     <p className="text-xs text-amber-600 mb-2">
@@ -305,12 +334,14 @@ export function ListItems({ list, currentUserId }: ListItemsProps) {
                   )}
 
                   <div className="flex flex-col space-y-2 mt-3">
-                    <a href={item.productUrl} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" size="sm" className="w-full flex items-center space-x-2">
-                        <ExternalLinkIcon className="w-4 h-4" />
-                        <span>View Product</span>
-                      </Button>
-                    </a>
+                    {item.productUrl && (
+                      <a href={item.productUrl} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" size="sm" className="w-full flex items-center space-x-2">
+                          <ExternalLinkIcon className="w-4 h-4" />
+                          <span>{item.itemType === "EXPERIENCE" ? "View / Book" : "View Product"}</span>
+                        </Button>
+                      </a>
+                    )}
 
                     {/* Guest: show disabled-looking actions that prompt sign-in */}
                     {isGuest && item.status === "WISHED" && (
@@ -363,7 +394,7 @@ export function ListItems({ list, currentUserId }: ListItemsProps) {
                               </Button>
                               <Button size="sm" className="w-full flex items-center space-x-2" onClick={() => handlePurchase(item)}>
                                 <ShoppingCartIcon className="w-4 h-4" />
-                                <span>Go to Store</span>
+                                <span>Mark as bought</span>
                               </Button>
                             </div>
                           )

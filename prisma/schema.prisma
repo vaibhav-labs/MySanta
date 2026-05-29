@@ -99,7 +99,7 @@ model ListItem {
   id               String   @id @default(cuid())
   listId           String
   productName      String
-  productUrl       String
+  productUrl       String?
   imageUrl         String?
   price            Float?
   currency         String   @default("USD")
@@ -109,6 +109,13 @@ model ListItem {
   status           String   @default("WISHED")
   heldByUserId     String?
   collaboratorIds  String?  // JSON array of user IDs for collaborative holding
+  // PRODUCT (default) = online product with URL
+  // OFFLINE          = item not sold online (store + notes)
+  // EXPERIENCE       = ticket / class / dinner / trip etc.
+  itemType         String   @default("PRODUCT")
+  notes            String?
+  location         String?
+  experienceDate   DateTime?
   createdAt        DateTime @default(now())
 
   list       List       @relation(fields: [listId], references: [id], onDelete: Cascade)

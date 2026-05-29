@@ -20,26 +20,37 @@ export const listSchema = z.object({
 })
 
 export const listItemSchema = z.object({
-  productName: z.string().min(1, "Product name is required"),
-  productUrl: z.string().url("Invalid URL"),
+  productName: z.string().min(1, "Name is required"),
+  productUrl: z.string().url("Invalid URL").optional().or(z.literal("")).or(z.null()),
   imageUrl: z.string().url().optional().or(z.literal("")).or(z.null()),
   price: z.number().min(0).optional().or(z.null()),
   currency: z.string().default("USD"),
   variants: z.string().optional().or(z.literal("")).or(z.null()),
-  platform: z.string().min(1, "Platform is required"),
+  platform: z.string().optional().or(z.literal("")).or(z.null()),
   quantity: z.number().min(1, "Quantity must be at least 1").default(1),
-})
+  itemType: z.enum(["PRODUCT", "OFFLINE", "EXPERIENCE"]).default("PRODUCT"),
+  notes: z.string().optional().or(z.literal("")).or(z.null()),
+  location: z.string().optional().or(z.literal("")).or(z.null()),
+  experienceDate: z.string().optional().or(z.literal("")).or(z.null()),
+}).refine(
+  (d) => d.itemType !== "PRODUCT" || (!!d.productUrl && d.productUrl.length > 0),
+  { message: "Product URL is required for online items", path: ["productUrl"] }
+)
 
 export const updateListItemSchema = z.object({
-  productName: z.string().min(1, "Product name is required").optional(),
-  productUrl: z.string().url("Invalid URL").optional(),
+  productName: z.string().min(1, "Name is required").optional(),
+  productUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
   imageUrl: z.string().url().optional(),
   price: z.number().positive().optional(),
   currency: z.string().optional(),
   variants: z.string().optional(),
-  platform: z.string().min(1, "Platform is required").optional(),
+  platform: z.string().optional(),
   quantity: z.number().min(1, "Quantity must be at least 1").optional(),
   status: z.enum(["WISHED", "ON_HOLD", "PURCHASED", "RECEIVED", "BOUGHT_SELF", "REMOVED"]).optional(),
+  itemType: z.enum(["PRODUCT", "OFFLINE", "EXPERIENCE"]).optional(),
+  notes: z.string().optional(),
+  location: z.string().optional(),
+  experienceDate: z.string().optional(),
 })
 
 export const eventSchema = z.object({

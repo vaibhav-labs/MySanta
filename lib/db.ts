@@ -187,7 +187,7 @@ export const db = {
         data: {
           listId: data.listId,
           productName: data.productName,
-          productUrl: data.productUrl,
+          productUrl: data.productUrl ?? undefined,
           imageUrl: data.imageUrl ?? undefined,
           price: data.price ?? undefined,
           currency: data.currency || 'USD',
@@ -196,6 +196,10 @@ export const db = {
           quantity: data.quantity || 1,
           status: data.status || 'WISHED',
           heldByUserId: data.heldByUserId ?? undefined,
+          itemType: data.itemType || 'PRODUCT',
+          notes: data.notes ?? undefined,
+          location: data.location ?? undefined,
+          experienceDate: data.experienceDate ? new Date(data.experienceDate) : undefined,
         },
       })
     },

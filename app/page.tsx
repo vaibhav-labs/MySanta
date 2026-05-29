@@ -236,6 +236,31 @@ export default async function HomePage() {
                 <p className="text-sm text-gray-400 leading-relaxed">Spot something on a friend's list you'd want too? Add it to yours in one click.</p>
               </div>
             </div>
+
+            {/* Not just products — experiences too */}
+            <div className="md:col-span-3 p-8 min-h-44 flex flex-col md:flex-row md:items-end md:justify-between gap-6" style={{background:'#FFF8CC'}}>
+              <div className="max-w-2xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 bg-ink flex items-center justify-center">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFD600" strokeWidth="2.5">
+                      <path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-widest" style={{color:'rgba(0,0,0,0.5)'}}>Not just products</span>
+                </div>
+                <h3 className="font-display text-ink mb-2" style={{fontSize:'clamp(1.75rem,3vw,2.5rem)', lineHeight:'1'}}>
+                  Add experiences, tickets, and stuff you can't buy online.
+                </h3>
+                <p className="text-sm leading-relaxed max-w-lg" style={{color:'rgba(0,0,0,0.65)'}}>
+                  A pottery class, a concert ticket, a handmade thing from that one weekend market — drop it in like any other gift. Friends can still claim it and mark it as done.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 md:flex-col md:items-end">
+                {['Concert tickets', 'Pottery class', 'Weekend market finds', 'Spa day', 'Cooking class'].map(t => (
+                  <span key={t} className="text-xs font-bold uppercase tracking-widest px-3 py-1.5 bg-white border border-ink/10 text-ink">{t}</span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -264,6 +289,8 @@ export default async function HomePage() {
               { label: 'Gym' },
               { label: 'Coffee' },
               { label: 'Home' },
+              { label: 'Experiences' },
+              { label: 'Offline' },
             ].map(c => (
               <span
                 key={c.label}
@@ -300,6 +327,17 @@ export default async function HomePage() {
               { emoji: '🕯️', name: 'Soy Wax Candle — Oud & Amber', author: 'Bath & Body Works', price: '₹1,499', tag: 'Home', adds: 276, bg: '#FFF8CC' },
               { emoji: '🪴', name: 'Marble Planter — Small', author: 'Nestasia', price: '₹999', tag: 'Home', adds: 163, bg: '#FEE2E4' },
               { emoji: '🖼️', name: 'Framed Art Print — Bauhaus Series', author: 'The Print Press', price: '₹1,850', tag: 'Home', adds: 119, bg: '#0D0D0D', dark: true },
+
+              // Experiences
+              { emoji: '🎟️', name: 'Coldplay India Tour — General Standing', author: 'BookMyShow · Mumbai', price: '₹12,500', tag: 'Experiences', adds: 502, bg: '#FEE2E4' },
+              { emoji: '🍷', name: 'Wine tasting for two', author: 'Sula Vineyards · Nashik', price: '₹3,499', tag: 'Experiences', adds: 184, bg: '#FFF8CC' },
+              { emoji: '🧗', name: 'Indoor climbing day pass', author: 'Bloc Climbing · Bangalore', price: '₹800', tag: 'Experiences', adds: 96, bg: '#F5F5F5' },
+              { emoji: '🍳', name: 'Italian cooking class', author: 'Conosh · weekend slot', price: '₹2,800', tag: 'Experiences', adds: 142, bg: '#0D0D0D', dark: true },
+
+              // Offline / not-online
+              { emoji: '🪕', name: 'Vintage Hofner acoustic guitar', author: 'Furtados · in-store only', price: '₹14,500', tag: 'Offline', adds: 71, bg: '#FFF8CC' },
+              { emoji: '🍰', name: 'Custom-decorated birthday cake', author: 'Theobroma · pre-order', price: '₹1,200', tag: 'Offline', adds: 168, bg: '#FEE2E4' },
+              { emoji: '🪑', name: 'Handcrafted teak side table', author: 'Bandra weekend market', price: '₹4,200', tag: 'Offline', adds: 58, bg: '#F5F5F5' },
             ].map(p => (
               <div
                 key={p.name}

@@ -38,18 +38,24 @@ export async function POST(
       )
     }
 
-    const { productName, productUrl, imageUrl, price, currency, variants, platform } =
-      validation.data
+    const {
+      productName, productUrl, imageUrl, price, currency, variants, platform,
+      itemType, notes, location, experienceDate,
+    } = validation.data
 
     const item = await db.listItem.create({
         listId: params.listId,
         productName,
-        productUrl,
+        productUrl: productUrl || null,
         imageUrl: imageUrl || null,
         price: price || null,
         currency: currency || "USD",
         variants: variants || null,
-        platform,
+        platform: platform || null,
+        itemType: itemType || "PRODUCT",
+        notes: notes || null,
+        location: location || null,
+        experienceDate: experienceDate || null,
     })
 
     return NextResponse.json(item, { status: 201 })

@@ -15,11 +15,11 @@ interface PurchaseModalProps {
   item: {
     id: string
     productName: string
-    productUrl: string
+    productUrl?: string | null
     imageUrl?: string | null
     price?: number | null
     currency?: string
-    platform: string
+    platform?: string | null
   }
   recipientAddress: any
   onPurchaseComplete: () => void
@@ -52,7 +52,7 @@ export function PurchaseModal({
   }
 
   const handleProceedToStore = () => {
-    window.open(item.productUrl, "_blank")
+    if (item.productUrl) window.open(item.productUrl, "_blank")
     setStep("confirm")
   }
 
