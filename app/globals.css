@@ -6,7 +6,8 @@
 @layer base {
   * { @apply border-secondary; }
   body {
-    @apply bg-white text-ink;
+    background: #FFFFFF;
+    color: #0D0D0D;
     font-family: 'DM Sans', sans-serif;
     font-size: 15px;
     -webkit-font-smoothing: antialiased;
@@ -17,14 +18,25 @@
   .container {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
-  /* Scrolling marquee */
+  .font-display {
+    font-family: 'Syne', sans-serif;
+  }
   .marquee-track {
     display: flex;
-    animation: marquee 30s linear infinite;
+    animation: marquee 32s linear infinite;
     width: max-content;
   }
   @keyframes marquee {
     from { transform: translateX(0); }
     to   { transform: translateX(-50%); }
+  }
+  .gradient-text {
+    background: linear-gradient(135deg, #7C3AED 0%, #EC4899 50%, #FFD600 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .gradient-bg {
+    background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%);
   }
 }

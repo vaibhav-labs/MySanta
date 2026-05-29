@@ -23,7 +23,7 @@ export function Navigation() {
       <nav className="border-b border-secondary bg-white sticky top-0 z-40">
         <div className="container h-14 flex items-center justify-between">
           <BrandMark />
-          <div className="h-6 w-24 bg-surface animate-pulse" />
+          <div className="h-6 w-24 bg-surface animate-pulse rounded" />
         </div>
       </nav>
     )
@@ -35,7 +35,10 @@ export function Navigation() {
         <div className="container h-14 flex items-center justify-between">
           <BrandMark />
           <Link href="/sign-in">
-            <button className="text-xs font-bold uppercase tracking-widest px-5 py-2 bg-ink text-white hover:bg-gray-800 transition-colors">
+            <button
+              className="text-sm font-semibold px-5 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
+              style={{ background: '#7C3AED' }}
+            >
               Sign In
             </button>
           </Link>
@@ -59,14 +62,14 @@ export function Navigation() {
                 <Link
                   key={href}
                   href={href}
-                  className={`flex items-center space-x-1.5 px-3 py-2 text-sm transition-all ${
-                    active
-                      ? 'bg-brand text-ink font-bold'
-                      : 'text-gray-500 hover:text-ink hover:bg-surface'
-                  }`}
+                  className="flex items-center space-x-1.5 px-3 py-2 text-sm transition-all rounded-lg"
+                  style={active
+                    ? { color: '#7C3AED', background: '#EDE9FE', fontWeight: 600 }
+                    : { color: '#6B7280' }
+                  }
                 >
                   <Icon className="w-4 h-4" />
-                  <span className="hidden md:inline font-medium">{label}</span>
+                  <span className="hidden md:inline">{label}</span>
                 </Link>
               )
             })}
@@ -74,18 +77,18 @@ export function Navigation() {
             <NotificationBell />
 
             {/* Avatar */}
-            <div className="relative group ml-1">
-              <button className="flex items-center justify-center w-8 h-8 overflow-hidden border-2 border-secondary hover:border-ink transition-colors">
+            <div className="relative group ml-2">
+              <button className="flex items-center justify-center w-8 h-8 rounded-lg overflow-hidden border-2 border-secondary hover:border-brand transition-colors">
                 {session.user.image ? (
                   <img src={session.user.image} alt={session.user.name || "User"} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-ink flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-full h-full flex items-center justify-center text-white text-xs font-bold" style={{ background: '#7C3AED' }}>
                     {(session.user.name || session.user.email || 'U')[0].toUpperCase()}
                   </div>
                 )}
               </button>
 
-              <div className="absolute right-0 mt-1 w-52 bg-white border border-secondary shadow-card-hover opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="absolute right-0 mt-2 w-52 bg-white border border-secondary rounded-xl shadow-card-hover opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
                 <div className="px-4 py-3 border-b border-secondary">
                   <p className="text-sm font-bold text-ink truncate">{session.user.name || 'User'}</p>
                   <p className="text-xs text-gray-400 truncate">{session.user.email}</p>
@@ -116,6 +119,6 @@ export function Navigation() {
 
 function BrandMark() {
   return (
-    <span style={{fontFamily:'Syne,sans-serif', fontWeight:700}} className="text-xl text-ink tracking-tight">MySanta</span>
+    <span className="font-display font-bold text-xl text-ink tracking-tight">MySanta</span>
   )
 }
