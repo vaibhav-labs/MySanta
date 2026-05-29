@@ -50,8 +50,22 @@ export async function POST(request: NextRequest) {
               $('h1').first().text() ||
               ""
 
+      // Better image extraction with fallbacks and validation
       image = $('meta[property="og:image"]').attr('content') ||
-              $('img').first().attr('src') ||
+              $('meta[property="twitter:image"]').attr('content') ||
+              $('img[data-old-hires]').attr('data-old-hires') || // Amazon high-res images
+              $('img[data-src]').attr('data-src') ||
+              $('img[src]').filter((_, el) => {
+                const src = $(el).attr('src') || '';
+                // Skip tracking pixels, lazy load placeholders, and tiny images
+                return src &&
+                       !src.includes('data:image') &&
+                       !src.includes('fls-eu.amazon') &&
+                       !src.includes('uedata') &&
+                       !src.includes('1x1') &&
+                       !src.includes('tracking') &&
+                       !src.includes('pixel');
+              }).first().attr('src') ||
               ""
 
       const priceSelectors = [
@@ -143,6 +157,20 @@ export async function POST(request: NextRequest) {
         const baseUrl = new URL(url).origin
         image = baseUrl + image
       }
+
+      // Final validation - reject obviously bad image URLs
+      if (image && (
+        image.includes('fls-eu.amazon') ||
+        image.includes('uedata') ||
+        image.includes('tracking') ||
+        image.includes('1x1') ||
+        image.includes('data:image/svg') ||
+        image.length < 10
+      )) {
+        image = null
+      }
+
+      console.log(`[SCRAPER] Scraped: title="${title}", image="${image}", price=${price} ${currency}, platform=${platform}`)
 
       return NextResponse.json({
         title: title.trim(),
