@@ -96,19 +96,20 @@ model List {
 }
 
 model ListItem {
-  id           String   @id @default(cuid())
-  listId       String
-  productName  String
-  productUrl   String
-  imageUrl     String?
-  price        Float?
-  currency     String   @default("USD")
-  variants     String?
-  platform     String?
-  quantity     Int      @default(1)
-  status       String   @default("WISHED")
-  heldByUserId String?
-  createdAt    DateTime @default(now())
+  id               String   @id @default(cuid())
+  listId           String
+  productName      String
+  productUrl       String
+  imageUrl         String?
+  price            Float?
+  currency         String   @default("USD")
+  variants         String?
+  platform         String?
+  quantity         Int      @default(1)
+  status           String   @default("WISHED")
+  heldByUserId     String?
+  collaboratorIds  String?  // JSON array of user IDs for collaborative holding
+  createdAt        DateTime @default(now())
 
   list       List       @relation(fields: [listId], references: [id], onDelete: Cascade)
   heldByUser User?      @relation("HeldByUser", fields: [heldByUserId], references: [id])
