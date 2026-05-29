@@ -7,7 +7,7 @@ export default async function AdminFeedbackPage() {
   const user = await requireAuth()
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Navigation />
 
       <main className="flex-1 container py-8">

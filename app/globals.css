@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,11 +7,9 @@
   * { @apply border-secondary; }
   body {
     @apply bg-white text-ink;
-    font-family: 'Inter', sans-serif;
-  }
-  h1, h2, h3 {
-    font-family: 'Bebas Neue', Impact, sans-serif;
-    letter-spacing: 0.02em;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
@@ -22,16 +20,11 @@
   /* Scrolling marquee */
   .marquee-track {
     display: flex;
-    animation: marquee 28s linear infinite;
+    animation: marquee 30s linear infinite;
     width: max-content;
   }
   @keyframes marquee {
     from { transform: translateX(0); }
     to   { transform: translateX(-50%); }
-  }
-  /* Yellow highlight */
-  .highlight {
-    background: #FFD600;
-    padding: 0 4px;
   }
 }

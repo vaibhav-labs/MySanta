@@ -91,9 +91,27 @@ export default function HowItWorksPage() {
         visual={<PurchaseMockup />}
       />
 
-      {/* ── STEP 7: Owner view ── */}
+      {/* ── STEP 7: Save to my list ── */}
       <Step
         number="07"
+        title="Spot something? Save it to your own list."
+        description="While browsing a friend's list and you see something you love? Hit 'Save to my list' — it copies the product to one of your own wishlists instantly. No re-adding manually."
+        side="right"
+        visual={<SaveToListMockup />}
+      />
+
+      {/* ── STEP 8: Chip in together ── */}
+      <Step
+        number="08"
+        title="Chip in with friends on expensive gifts"
+        description="For big-ticket items, multiple friends can 'Join Collaboration' instead of one person buying alone. Everyone splits the cost. The item shows as 'Held by a group' so others know it's covered."
+        side="left"
+        visual={<ChipInMockup />}
+      />
+
+      {/* ── STEP 9: Owner view ── */}
+      <Step
+        number="09"
         title="You only see what you're allowed to"
         description="When you view your own list, you see everything — including what's been purchased. When friends view it, purchased items are hidden so your surprises stay surprises."
         side="right"
@@ -132,6 +150,16 @@ export default function HowItWorksPage() {
                 title: 'Multiple currencies',
                 desc: 'Items auto-detect currency from the product URL. INR, USD, EUR, GBP and more — we display the price correctly wherever it came from.',
                 icon: '💰',
+              },
+              {
+                title: 'Chip in together',
+                desc: 'For expensive gifts, friends can join a collaboration and split the cost. The item shows as "held by a group" so others know it\'s covered.',
+                icon: '🤝',
+              },
+              {
+                title: 'Save to my list',
+                desc: 'Spot something amazing on a friend\'s list? Save it to one of your own wishlists instantly. One click, no re-adding.',
+                icon: '📌',
               },
               {
                 title: 'Notifications',
@@ -369,6 +397,80 @@ function PurchaseMockup() {
         <p className="text-white/60">• Item hidden from other friends' view</p>
         <p className="text-white/60">• Owner gets a notification (no spoilers)</p>
         <p className="text-white/60">• Item stays visible to owner for tracking</p>
+      </div>
+    </div>
+  )
+}
+
+function SaveToListMockup() {
+  return (
+    <div className="w-full max-w-sm space-y-3">
+      <div className="bg-white border border-secondary p-5 shadow-card">
+        <div className="flex items-center gap-3 mb-4 pb-4 border-b border-secondary">
+          <div className="w-10 h-10 bg-secondary flex-shrink-0 flex items-center justify-center text-lg">👟</div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-ink truncate">Nike Air Jordan 1 Retro</p>
+            <p className="text-xs text-gray-400">₹12,995 · Nike</p>
+          </div>
+        </div>
+        <a href="#" className="block w-full border border-secondary text-center py-2 text-xs font-medium mb-2 hover:border-ink">View Product →</a>
+        <button className="w-full bg-ink text-white text-xs font-bold uppercase tracking-widest py-2.5 mb-2">Hold this Gift</button>
+        {/* The new button */}
+        <div className="border border-secondary">
+          <button className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-ink hover:bg-surface">
+            <span className="text-base leading-none">+</span>
+            <span>Save to my list</span>
+          </button>
+          {/* Dropdown open state */}
+          <div className="border-t border-secondary">
+            <p className="text-[10px] text-gray-400 px-3 pt-2 pb-1 uppercase tracking-wider font-bold">Your lists</p>
+            {["My Birthday List", "Christmas Wishlist", "Random Wants"].map(l => (
+              <div key={l} className="px-3 py-2 text-xs font-medium text-ink hover:bg-surface border-b border-secondary last:border-b-0 cursor-pointer">{l}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <p className="text-xs text-gray-400 text-center">Item is copied to your list — ready to share with your own friends.</p>
+    </div>
+  )
+}
+
+function ChipInMockup() {
+  return (
+    <div className="w-full max-w-sm space-y-3">
+      <div className="bg-white border border-secondary p-5 shadow-card">
+        <div className="flex items-center justify-between mb-3 pb-3 border-b border-secondary">
+          <div>
+            <p className="text-sm font-semibold text-ink">Sony WH-1000XM5</p>
+            <p className="text-xs text-gray-400">₹29,990 · Amazon</p>
+          </div>
+          <span className="text-[10px] bg-secondary px-2 py-1 font-bold uppercase tracking-wide text-gray-600">
+            3 chipping in
+          </span>
+        </div>
+        {/* Collaborators */}
+        <div className="mb-4">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Chipping in</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            {['Rahul', 'Sneha', 'Arjun'].map((name, i) => (
+              <div key={name} className="flex items-center gap-1.5 bg-surface border border-secondary px-2.5 py-1.5 rounded-full">
+                <div className="w-5 h-5 rounded-full bg-ink flex items-center justify-center text-[9px] text-white font-bold">{name[0]}</div>
+                <span className="text-xs font-medium text-ink">{name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <button className="w-full bg-brand text-white text-xs font-bold uppercase tracking-widest py-2.5 mb-2 hover:bg-brand-dark transition-colors">
+          Join Collaboration →
+        </button>
+        <p className="text-[10px] text-gray-400 text-center">Split ₹29,990 across 4 people = ~₹7,500 each</p>
+      </div>
+      <div className="bg-ink text-white p-4 text-xs space-y-1">
+        <p className="font-bold mb-1.5">How chipping in works:</p>
+        <p className="text-white/60">• Anyone can join a held item as a collaborator</p>
+        <p className="text-white/60">• The item shows as "Held by a group" to others</p>
+        <p className="text-white/60">• All collaborators coordinate the purchase off-platform</p>
+        <p className="text-white/60">• One person marks it purchased when done</p>
       </div>
     </div>
   )

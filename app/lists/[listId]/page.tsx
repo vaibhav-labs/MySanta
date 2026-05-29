@@ -64,7 +64,7 @@ export default async function ListDetailPage({
   if (!list) notFound()
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-white">
       <Navigation />
       <main className="container py-8">
         <ListHeader list={list} />

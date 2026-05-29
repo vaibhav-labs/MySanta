@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent } from "@/components/ui/Card"
@@ -124,6 +124,18 @@ export function ListItems({ list, currentUserId }: ListItemsProps) {
       ))
       toast.success("Item unmarked")
     } catch { toast.error("Failed to unmark item") }
+  }
+
+  const handleCopyItem = async (itemId: string, targetListId: string) => {
+    try {
+      const response = await fetch(`/api/items/${itemId}/copy`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listId: targetListId }),
+      })
+      if (!response.ok) { toast.error((await response.json()).error || "Failed to copy item"); return }
+      toast.success("Item saved to your list!")
+    } catch { toast.error("Failed to copy item") }
   }
 
   return (
@@ -322,6 +334,14 @@ export function ListItems({ list, currentUserId }: ListItemsProps) {
                     )}
 
 
+                    {/* Save to my list — visible to all logged-in non-owners */}
+                    {!list.isOwner && !isGuest && (
+                      <SaveToListPicker
+                        itemId={item.id}
+                        onCopy={handleCopyItem}
+                      />
+                    )}
+
                     {/* Owner actions */}
                     {list.isOwner && (
                       <div className="flex space-x-2">
@@ -360,6 +380,86 @@ export function ListItems({ list, currentUserId }: ListItemsProps) {
           recipientAddress={list.user?.address || null}
           onPurchaseComplete={() => handlePurchaseComplete(selectedItem.id)}
         />
+      )}
+    </div>
+  )
+}
+
+/* ── Inline list-picker for "Save to my list" ── */
+function SaveToListPicker({
+  itemId,
+  onCopy,
+}: {
+  itemId: string
+  onCopy: (itemId: string, listId: string) => Promise<void>
+}) {
+  const [open, setOpen] = useState(false)
+  const [lists, setLists] = useState<{ id: string; name: string }[]>([])
+  const [loading, setLoading] = useState(false)
+  const [copying, setCopying] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [])
+
+  const handleOpen = async () => {
+    if (open) { setOpen(false); return }
+    setLoading(true)
+    try {
+      const res = await fetch("/api/lists")
+      if (res.ok) {
+        const data = await res.json()
+        setLists(data.map((l: any) => ({ id: l.id, name: l.name })))
+      }
+    } catch {}
+    setLoading(false)
+    setOpen(true)
+  }
+
+  const handleSelect = async (listId: string) => {
+    setCopying(true)
+    await onCopy(itemId, listId)
+    setCopying(false)
+    setOpen(false)
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={handleOpen}
+        disabled={copying}
+        className="w-full flex items-center justify-center space-x-1.5 border border-secondary text-xs font-semibold py-2 px-3 hover:border-ink hover:bg-surface transition-all disabled:opacity-50"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        <span>{copying ? "Saving..." : "Save to my list"}</span>
+      </button>
+
+      {open && (
+        <div className="absolute bottom-full mb-1 left-0 right-0 bg-white border border-secondary shadow-card-hover z-20 rounded-sm overflow-hidden">
+          {loading ? (
+            <p className="text-xs text-gray-400 px-3 py-2.5">Loading your lists…</p>
+          ) : lists.length === 0 ? (
+            <p className="text-xs text-gray-400 px-3 py-2.5">No lists yet — create one first.</p>
+          ) : (
+            lists.map(l => (
+              <button
+                key={l.id}
+                onClick={() => handleSelect(l.id)}
+                className="w-full text-left px-3 py-2.5 text-xs font-medium text-ink hover:bg-surface transition-colors border-b border-secondary last:border-b-0 truncate"
+              >
+                {l.name}
+              </button>
+            ))
+          )}
+        </div>
       )}
     </div>
   )

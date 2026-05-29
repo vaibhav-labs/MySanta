@@ -3,7 +3,7 @@ import { FeedbackForm } from "@/components/feedback/FeedbackForm"
 
 export default function FeedbackPage() {
   return (
-    <div className="min-h-screen bg-surface flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <nav className="border-b border-secondary bg-white">
         <div className="container">
           <div className="flex h-16 items-center justify-between">

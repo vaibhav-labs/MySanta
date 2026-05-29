@@ -40,14 +40,6 @@ export default function ProfilePage() {
     name: "",
     anniversary: "",
     gender: "other" as "male" | "female" | "other",
-    address: {
-      line1: "",
-      line2: "",
-      city: "",
-      state: "",
-      postalCode: "",
-      country: "",
-    },
   })
 
   useEffect(() => {
@@ -64,14 +56,6 @@ export default function ProfilePage() {
           name: data.name || "",
           anniversary: data.anniversary ? new Date(data.anniversary).toISOString().split('T')[0] : "",
           gender: data.gender || "other",
-          address: data.address ? JSON.parse(data.address) : {
-            line1: "",
-            line2: "",
-            city: "",
-            state: "",
-            postalCode: "",
-            country: "",
-          },
         })
       }
     } catch (error) {
@@ -105,7 +89,6 @@ export default function ProfilePage() {
           name: formData.name,
           anniversary: formData.anniversary || null,
           gender: formData.gender,
-          address: formData.address,
         }),
       })
 
@@ -126,7 +109,7 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-surface">
+      <div className="min-h-screen bg-white">
         <Navigation />
         <main className="container py-8">
           <div className="max-w-2xl mx-auto text-center">
@@ -140,7 +123,7 @@ export default function ProfilePage() {
   const GenderIcon = getGenderIcon(profile.gender)
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-white">
       <Navigation />
 
       <main className="container py-8">
@@ -235,108 +218,6 @@ export default function ProfilePage() {
                   <p className="text-black p-2 bg-gray-50 rounded">
                     {new Date(profile.createdAt).toLocaleDateString()}
                   </p>
-                </div>
-              </div>
-
-              {/* Address Information */}
-              <div>
-                <h3 className="text-lg font-medium text-black mb-4">Address Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Address Line 1</label>
-                    {isEditing ? (
-                      <Input
-                        name="address.line1"
-                        value={formData.address.line1}
-                        onChange={handleInputChange}
-                        placeholder="Street address"
-                      />
-                    ) : (
-                      <p className="text-black p-2 bg-gray-50 rounded">
-                        {formData.address.line1 || "Not set"}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Address Line 2</label>
-                    {isEditing ? (
-                      <Input
-                        name="address.line2"
-                        value={formData.address.line2}
-                        onChange={handleInputChange}
-                        placeholder="Apartment, suite, etc."
-                      />
-                    ) : (
-                      <p className="text-black p-2 bg-gray-50 rounded">
-                        {formData.address.line2 || "Not set"}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">City</label>
-                    {isEditing ? (
-                      <Input
-                        name="address.city"
-                        value={formData.address.city}
-                        onChange={handleInputChange}
-                        placeholder="City"
-                      />
-                    ) : (
-                      <p className="text-black p-2 bg-gray-50 rounded">
-                        {formData.address.city || "Not set"}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">State/Province</label>
-                    {isEditing ? (
-                      <Input
-                        name="address.state"
-                        value={formData.address.state}
-                        onChange={handleInputChange}
-                        placeholder="State or Province"
-                      />
-                    ) : (
-                      <p className="text-black p-2 bg-gray-50 rounded">
-                        {formData.address.state || "Not set"}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Postal Code</label>
-                    {isEditing ? (
-                      <Input
-                        name="address.postalCode"
-                        value={formData.address.postalCode}
-                        onChange={handleInputChange}
-                        placeholder="Postal code"
-                      />
-                    ) : (
-                      <p className="text-black p-2 bg-gray-50 rounded">
-                        {formData.address.postalCode || "Not set"}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Country</label>
-                    {isEditing ? (
-                      <Input
-                        name="address.country"
-                        value={formData.address.country}
-                        onChange={handleInputChange}
-                        placeholder="Country"
-                      />
-                    ) : (
-                      <p className="text-black p-2 bg-gray-50 rounded">
-                        {formData.address.country || "Not set"}
-                      </p>
-                    )}
-                  </div>
                 </div>
               </div>
 

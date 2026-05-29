@@ -85,7 +85,7 @@ export default async function DashboardPage() {
   ])
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-white">
       <Navigation />
 
       <main className="container py-8">

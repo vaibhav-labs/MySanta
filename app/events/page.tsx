@@ -49,7 +49,7 @@ export default async function EventsPage() {
   const pastEvents = events.filter((event: any) => new Date(event.eventDate) < today)
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-white">
       <Navigation />
 
       <main className="container py-8">

@@ -116,6 +116,6 @@ export function Navigation() {
 
 function BrandMark() {
   return (
-    <span className="font-display text-2xl tracking-wider text-ink uppercase">MySanta</span>
+    <span style={{fontFamily:'Syne,sans-serif', fontWeight:700}} className="text-xl text-ink tracking-tight">MySanta</span>
   )
 }
