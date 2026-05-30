@@ -21,20 +21,14 @@ export const metadata: Metadata = {
     siteName: "MySanta",
     title: "MySanta — Your Wishlist. Their Move.",
     description: "Make a wishlist for any occasion. Share one link. No more duplicate gifts, no more guessing.",
-    images: [
-      {
-        url: "/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "MySanta — Your Wishlist. Their Move.",
-      },
-    ],
+    // Image is supplied per-route via app/**/opengraph-image.tsx files
+    // (Next's file-system convention). Leaving images empty here so each
+    // page can ship its own preview.
   },
   twitter: {
     card: "summary_large_image",
     title: "MySanta — Your Wishlist. Their Move.",
     description: "Make a wishlist for any occasion. Share one link. No more duplicate gifts, no more guessing.",
-    images: ["/opengraph-image"],
   },
 }
 
